@@ -1,0 +1,55 @@
+<%- include('header') %>
+
+<h2>Shopping Cart</h2>
+
+<% if (cart && cart.length > 0) { %>
+  <div class="cart-container">
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Price</th>
+          <th>Quantity</th>
+          <th>Subtotal</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% let total = 0; %>
+        <% cart.forEach(item => { %>
+          <% const subtotal = item.price * item.quantity; %>
+          <% total += subtotal; %>
+          <tr>
+            <td><%= item.name %></td>
+            <td>R$ <%= item.price.toFixed(2) %></td>
+            <td><%= item.quantity %></td>
+            <td>R$ <%= subtotal.toFixed(2) %></td>
+            <td>
+              <button class="btn btn-danger remove-from-cart" data-id="<%= item.id %>">
+                Remove
+              </button>
+            </td>
+          </tr>
+        <% }); %>
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3"><strong>Total</strong></td>
+          <td colspan="2"><strong>R$ <%= total.toFixed(2) %></strong></td>
+        </tr>
+      </tfoot>
+    </table>
+
+    <div class="cart-actions">
+      <a href="/orders/menu" class="btn btn-secondary">Continue Shopping</a>
+      <a href="/orders/checkout" class="btn btn-primary">Proceed to Checkout</a>
+    </div>
+  </div>
+<% } else { %>
+  <div class="empty-state">
+    <p>Your cart is empty.</p>
+    <a href="/orders/menu" class="btn btn-primary">Browse Menu</a>
+  </div>
+<% } %>
+
+<%- include('footer') %>

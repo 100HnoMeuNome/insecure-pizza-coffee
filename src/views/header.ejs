@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Insecure Pizza & Coffee</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+  <nav class="navbar">
+    <div class="container">
+      <div class="nav-brand">
+        <h1>🍕☕ Insecure Pizza & Coffee</h1>
+      </div>
+      <ul class="nav-menu">
+        <li><a href="/"><%= __('nav_home') %></a></li>
+        <% if (user) { %>
+          <li><a href="/orders/menu"><%= __('nav_menu') %></a></li>
+          <li><a href="/orders/cart"><%= __('nav_cart') %></a></li>
+          <li><a href="/orders/my-orders"><%= __('nav_my_orders') %></a></li>
+          <% if (user.isAdmin) { %>
+            <li><a href="/admin/dashboard"><%= __('nav_admin') %></a></li>
+          <% } %>
+          <li><a href="/auth/logout"><%= __('nav_logout') %> (<%= user.username %>)</a></li>
+        <% } else { %>
+          <li><a href="/auth/login"><%= __('nav_login') %></a></li>
+          <li><a href="/auth/register"><%= __('nav_register') %></a></li>
+        <% } %>
+        <li class="language-selector">
+          <select onchange="window.location.href='/change-language/' + this.value + '?redirect=' + encodeURIComponent(window.location.pathname)">
+            <option value="pt-BR" <%= getLocale() === 'pt-BR' ? 'selected' : '' %>>🇧🇷 PT</option>
+            <option value="en" <%= getLocale() === 'en' ? 'selected' : '' %>>🇺🇸 EN</option>
+            <option value="es" <%= getLocale() === 'es' ? 'selected' : '' %>>🇪🇸 ES</option>
+          </select>
+        </li>
+      </ul>
+    </div>
+  </nav>
+  <div class="container content">

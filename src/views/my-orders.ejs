@@ -1,0 +1,35 @@
+<%- include('header') %>
+
+<h2>My Orders</h2>
+
+<% if (orders && orders.length > 0) { %>
+  <div class="orders-list">
+    <% orders.forEach(order => { %>
+      <div class="order-card">
+        <div class="order-header">
+          <h3>Order #<%= order.id %></h3>
+          <span class="status-badge status-<%= order.status %>"><%= order.status %></span>
+        </div>
+        <div class="order-body">
+          <p><strong>Date:</strong> <%= new Date(order.created_at).toLocaleDateString() %></p>
+          <p><strong>Total:</strong> R$ <%= order.total_amount.toFixed(2) %></p>
+          <p><strong>Payment:</strong> <%= order.payment_method %> (<%= order.payment_status %>)</p>
+          <p><strong>Delivery:</strong> <%= order.delivery_address %></p>
+        </div>
+        <div class="order-footer">
+          <a href="/orders/confirmation/<%= order.id %>" class="btn btn-secondary">View Details</a>
+          <a href="/orders/print/<%= order.id %>" class="btn btn-primary" target="_blank">
+            🖨️ Print Order
+          </a>
+        </div>
+      </div>
+    <% }); %>
+  </div>
+<% } else { %>
+  <div class="empty-state">
+    <p>You haven't placed any orders yet.</p>
+    <a href="/orders/menu" class="btn btn-primary">Start Ordering</a>
+  </div>
+<% } %>
+
+<%- include('footer') %>

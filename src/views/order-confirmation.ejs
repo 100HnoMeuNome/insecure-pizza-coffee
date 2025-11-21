@@ -1,0 +1,56 @@
+<%- include('header') %>
+
+<div class="confirmation-container">
+  <div class="confirmation-header">
+    <h2>✅ Order Confirmed!</h2>
+    <p>Thank you for your order, <%= order.username %>!</p>
+  </div>
+
+  <div class="order-details">
+    <h3>Order #<%= order.id %></h3>
+    <p><strong>Status:</strong> <span class="status-badge status-<%= order.status %>"><%= order.status %></span></p>
+    <p><strong>Payment Status:</strong> <span class="status-badge status-<%= order.payment_status %>"><%= order.payment_status %></span></p>
+    <p><strong>Total Amount:</strong> R$ <%= order.total_amount.toFixed(2) %></p>
+    <p><strong>Payment Method:</strong> <%= order.payment_method %></p>
+  </div>
+
+  <div class="order-items">
+    <h3>Items Ordered</h3>
+    <table class="cart-table">
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Quantity</th>
+          <th>Price</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(item => { %>
+          <tr>
+            <td><%= item.name %></td>
+            <td><%= item.quantity %></td>
+            <td>R$ <%= item.price.toFixed(2) %></td>
+            <td>R$ <%= (item.price * item.quantity).toFixed(2) %></td>
+          </tr>
+        <% }); %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="delivery-info">
+    <h3>Delivery Information</h3>
+    <p><strong>Address:</strong> <%= order.delivery_address %></p>
+    <p><strong>Phone:</strong> <%= order.delivery_phone %></p>
+    <% if (order.notes) { %>
+      <p><strong>Notes:</strong> <%= order.notes %></p>
+    <% } %>
+  </div>
+
+  <div class="confirmation-actions">
+    <a href="/orders/menu" class="btn btn-secondary">Order More</a>
+    <a href="/orders/my-orders" class="btn btn-primary">View My Orders</a>
+  </div>
+</div>
+
+<%- include('footer') %>

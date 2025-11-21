@@ -1,0 +1,327 @@
+================================================================================
+🍕☕ INSECURE PIZZA & COFFEE - PROJECT OVERVIEW
+================================================================================
+
+PROJECT LOCATION: /Users/tales.casagrande/Documents/Labs/apps/insecure-pizza-coffee
+
+================================================================================
+✅ WHAT'S BEEN CREATED
+================================================================================
+
+1. COMPLETE NODE.JS APPLICATION
+   - Express.js web server with Datadog APM integration
+   - User authentication (login/register)
+   - Product catalog (pizzas & coffee)
+   - Shopping cart functionality
+   - Order management system
+   - Payment processing (Credit Card & PIX)
+   - Admin dashboard with management tools
+
+2. INTENTIONAL SECURITY VULNERABILITIES
+   ✓ SQL Injection
+   ✓ Command Injection
+   ✓ Cross-Site Scripting (XSS)
+   ✓ Insecure Direct Object References (IDOR)
+   ✓ Sensitive Data Exposure
+   ✓ Broken Authentication
+   ✓ Missing Authorization
+   ✓ Security Misconfiguration
+   ✓ Information Disclosure
+   ✓ Username Enumeration
+
+3. DATADOG INTEGRATION (FULL SECURITY SUITE)
+   ✓ APM (Application Performance Monitoring)
+   ✓ ASM (Application Security Monitoring)
+   ✓ IAST (Interactive Application Security Testing)
+   ✓ SCA (Software Composition Analysis)
+   ✓ Workload Security (Runtime Protection)
+   ✓ Distributed Tracing
+   ✓ Log Injection
+   ✓ Runtime Metrics
+
+4. DEPLOYMENT OPTIONS
+   ✓ Docker Compose (with Datadog Agent)
+   ✓ Kubernetes manifests (complete setup)
+   ✓ Local development setup
+
+5. MYSQL DATABASE
+   ✓ Complete schema with 5 tables
+   ✓ Sample data (10 products)
+   ✓ Admin user (admin/admin123)
+   ✓ Initialization scripts
+
+6. FRONTEND
+   ✓ 14 EJS templates
+   ✓ Responsive CSS design
+   ✓ Client-side JavaScript
+   ✓ Complete user interface
+
+7. DOCUMENTATION
+   ✓ README.md - Complete guide
+   ✓ QUICKSTART.md - Quick start guide
+   ✓ SECURITY.md - Vulnerability catalog
+   ✓ PROJECT_SUMMARY.md - Project overview
+   ✓ This file - Overview
+
+================================================================================
+🚀 QUICK START
+================================================================================
+
+OPTION 1: Docker Compose (Recommended)
+--------------------------------------
+1. cd /Users/tales.casagrande/Documents/Labs/apps/insecure-pizza-coffee
+2. Verify .env file has your Datadog API key (already configured!)
+3. docker-compose up -d
+4. docker-compose exec app npm run init-db
+5. Visit http://localhost:3000
+6. Login: admin / admin123
+
+OPTION 2: Using Makefile
+------------------------
+1. make up          # Start services
+2. make init-db     # Initialize database
+3. make logs        # View logs
+
+OPTION 3: Kubernetes
+-------------------
+1. Update k8s/secrets.yaml with your Datadog API key
+2. cd k8s && ./deploy.sh
+3. Follow the on-screen instructions
+
+================================================================================
+📂 PROJECT STRUCTURE
+================================================================================
+
+insecure-pizza-coffee/
+├── src/
+│   ├── server.js                    # Main application
+│   ├── config/database.js           # MySQL connection
+│   ├── routes/
+│   │   ├── auth.js                  # Authentication (SQL injection)
+│   │   ├── orders.js                # Orders (IDOR vulnerable)
+│   │   ├── payment.js               # Payments (data exposure)
+│   │   └── admin.js                 # Admin (command injection)
+│   ├── views/                       # 14 EJS templates
+│   └── public/                      # CSS & JavaScript
+│
+├── db/
+│   ├── schema.sql                   # Database schema
+│   └── init.js                      # DB initialization
+│
+├── k8s/                             # Kubernetes manifests
+│   ├── namespace.yaml
+│   ├── configmap.yaml
+│   ├── secrets.yaml
+│   ├── mysql-deployment.yaml
+│   ├── app-deployment.yaml
+│   ├── datadog-agent.yaml
+│   └── deploy.sh
+│
+├── Configuration Files
+│   ├── .env                         # Environment (configured!)
+│   ├── package.json                 # Dependencies
+│   ├── Dockerfile                   # Container image
+│   ├── docker-compose.yml           # Docker Compose
+│   └── Makefile                     # Convenience commands
+│
+└── Documentation
+    ├── README.md                    # Main documentation
+    ├── QUICKSTART.md                # Quick start guide
+    ├── SECURITY.md                  # Vulnerabilities
+    └── PROJECT_SUMMARY.md           # Project summary
+
+================================================================================
+🔑 DEFAULT CREDENTIALS
+================================================================================
+
+Admin Account:
+  Username: admin
+  Password: admin123
+
+Database:
+  User: pizzauser
+  Password: pizzapass123
+  Database: pizzacoffee
+
+================================================================================
+🛡️ DATADOG CONFIGURATION
+================================================================================
+
+Your Datadog API Key: DD_api
+Datadog Site: datadoghq.com
+
+Enabled Features:
+  ✓ APM Tracing
+  ✓ Application Security Monitoring (ASM)
+  ✓ Interactive Application Security Testing (IAST)
+  ✓ Software Composition Analysis (SCA)
+  ✓ Workload Security
+  ✓ Log Injection
+  ✓ Runtime Metrics
+
+After starting the app, check:
+  - Datadog → APM → Services → "insecure-pizza-coffee"
+  - Datadog → Security → Application Security
+  - Datadog → Security → Application Vulnerabilities
+  - Datadog → Security → Software Composition Analysis
+
+================================================================================
+🧪 TEST THE VULNERABILITIES
+================================================================================
+
+SQL Injection:
+  curl -X POST http://localhost:3000/auth/login \
+    -d "username=admin' OR '1'='1&password=anything"
+
+IDOR (Access other users' data):
+  http://localhost:3000/orders/my-orders?userId=2
+
+Command Injection:
+  1. Login as admin
+  2. Go to /admin/dashboard
+  3. Execute: ls -la
+
+Sensitive Data:
+  - Credit card data stored in plaintext in database
+  - Check payment_transactions table
+
+================================================================================
+📊 MONITORING
+================================================================================
+
+Datadog will detect:
+  • SQL injection attempts → ASM Security Signals
+  • Command injection → Workload Security
+  • Code vulnerabilities → IAST Results
+  • Vulnerable dependencies → SCA Inventory
+  • All requests → APM Traces
+
+View in Datadog:
+  1. APM: https://app.datadoghq.com/apm/services
+  2. Security: https://app.datadoghq.com/security/appsec
+  3. Vulnerabilities: https://app.datadoghq.com/security/appsec/vulnerabilities
+
+================================================================================
+🛠️ USEFUL COMMANDS
+================================================================================
+
+Docker Compose:
+  make up              # Start services
+  make down            # Stop services
+  make logs            # View logs
+  make init-db         # Initialize database
+  make restart         # Restart services
+  make clean           # Clean up everything
+
+Kubernetes:
+  make k8s-deploy      # Deploy to K8s
+  make k8s-delete      # Delete from K8s
+  make k8s-logs        # View K8s logs
+  make k8s-port-forward # Port forward to local
+
+Testing:
+  make test-sql-injection  # Test SQL injection
+  make test-idor          # Test IDOR
+
+Status:
+  make status          # Check service status
+  make dd-check        # Check Datadog Agent
+
+================================================================================
+⚠️ IMPORTANT SECURITY WARNING
+================================================================================
+
+THIS APPLICATION IS INTENTIONALLY VULNERABLE!
+
+DO NOT:
+  ❌ Deploy to production
+  ❌ Expose to the public internet
+  ❌ Use with real data
+  ❌ Connect to production databases
+
+DO:
+  ✅ Use in isolated environments only
+  ✅ Use for security testing
+  ✅ Use for training purposes
+  ✅ Use for Datadog demonstrations
+  ✅ Keep on private networks
+
+================================================================================
+📚 NEXT STEPS
+================================================================================
+
+1. Start the application:
+   cd /Users/tales.casagrande/Documents/Labs/apps/insecure-pizza-coffee
+   docker-compose up -d
+
+2. Initialize database:
+   docker-compose exec app npm run init-db
+
+3. Access the application:
+   http://localhost:3000
+
+4. Login as admin:
+   Username: admin
+   Password: admin123
+
+5. Generate traffic:
+   - Browse the menu
+   - Add items to cart
+   - Place an order
+   - Try SQL injection
+
+6. Check Datadog:
+   - View traces in APM
+   - Check security signals in ASM
+   - Review vulnerabilities in IAST
+   - Check dependencies in SCA
+
+7. Explore admin panel:
+   http://localhost:3000/admin/dashboard
+   - Try command injection
+   - Execute SQL queries
+   - View sensitive data
+
+================================================================================
+📖 DOCUMENTATION FILES
+================================================================================
+
+README.md          - Complete documentation with setup instructions
+QUICKSTART.md      - Fast setup guide for getting started quickly
+SECURITY.md        - Detailed vulnerability catalog with examples
+PROJECT_SUMMARY.md - Technical project overview and architecture
+OVERVIEW.txt       - This file - Quick reference guide
+
+================================================================================
+🎯 LEARNING OBJECTIVES
+================================================================================
+
+This application teaches:
+  • How common vulnerabilities work
+  • How Datadog ASM detects attacks in real-time
+  • How IAST finds vulnerabilities in code
+  • How SCA tracks vulnerable dependencies
+  • How to integrate Datadog security features
+  • OWASP Top 10 vulnerabilities in practice
+  • Container security monitoring
+  • Application security best practices (by showing what NOT to do)
+
+================================================================================
+📞 SUPPORT
+================================================================================
+
+For issues or questions:
+  • Check README.md for detailed documentation
+  • Check QUICKSTART.md for setup help
+  • Review docker-compose logs: docker-compose logs -f
+  • Verify Datadog Agent: make dd-check
+
+================================================================================
+
+Created: 2025-11-19
+Status: ✅ READY TO USE
+Environment: ✅ CONFIGURED WITH YOUR DATADOG API KEY
+
+Happy (Insecure) Testing! 🍕☕🔐
+
+================================================================================

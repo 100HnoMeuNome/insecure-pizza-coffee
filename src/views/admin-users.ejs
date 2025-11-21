@@ -1,0 +1,36 @@
+<%- include('header') %>
+
+<h2>User Management</h2>
+
+<% if (users && users.length > 0) { %>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Username</th>
+        <th>Email</th>
+        <th>Full Name</th>
+        <th>Admin</th>
+        <th>Created</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% users.forEach(u => { %>
+        <tr>
+          <td><%= u.id %></td>
+          <td><%= u.username %></td>
+          <td><%= u.email || 'N/A' %></td>
+          <td><%= u.full_name || 'N/A' %></td>
+          <td><%= u.is_admin ? '✅' : '❌' %></td>
+          <td><%= new Date(u.created_at).toLocaleDateString() %></td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } else { %>
+  <div class="empty-state">
+    <p>No users found.</p>
+  </div>
+<% } %>
+
+<%- include('footer') %>

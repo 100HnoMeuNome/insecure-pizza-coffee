@@ -1,0 +1,131 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pizzacoffee-app
+  namespace: insecure-pizza-coffee
+  labels:
+    app: pizzacoffee-app
+    tags.datadoghq.com/env: "production"
+    tags.datadoghq.com/service: "insecure-pizza-coffee"
+    tags.datadoghq.com/version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pizzacoffee-app
+  template:
+    metadata:
+      labels:
+        app: pizzacoffee-app
+        tags.datadoghq.com/env: "production"
+        tags.datadoghq.com/service: "insecure-pizza-coffee"
+        tags.datadoghq.com/version: "1.0.0"
+        admission.datadoghq.com/enabled: "true"
+      annotations:
+        ad.datadoghq.com/pizzacoffee-app.logs: '[{"source":"nodejs","service":"insecure-pizza-coffee"}]'
+    spec:
+      containers:
+      - name: pizzacoffee-app
+        image: insecure-pizza-coffee:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: app-config
+        env:
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: SESSION_SECRET
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DB_PASSWORD
+        - name: DD_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DD_API_KEY
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        securityContext:
+          runAsNonRoot: false
+          allowPrivilegeEscalation: true
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pizzacoffee-service
+  namespace: insecure-pizza-coffee
+  labels:
+    app: pizzacoffee-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: pizzacoffee-app
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pizzacoffee-hpa
+  namespace: insecure-pizza-coffee
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pizzacoffee-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

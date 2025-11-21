@@ -1,0 +1,54 @@
+<%- include('header') %>
+
+<h2>Admin Dashboard</h2>
+
+<div class="admin-stats">
+  <div class="stat-card">
+    <h3>Total Orders</h3>
+    <p class="stat-number"><%= stats.orders %></p>
+  </div>
+  <div class="stat-card">
+    <h3>Total Users</h3>
+    <p class="stat-number"><%= stats.users %></p>
+  </div>
+  <div class="stat-card">
+    <h3>Revenue</h3>
+    <p class="stat-number">R$ <%= stats.revenue.toFixed(2) %></p>
+  </div>
+</div>
+
+<div class="admin-menu">
+  <h3>Admin Tools</h3>
+  <div class="admin-links">
+    <a href="/admin/orders" class="btn btn-primary">Manage Orders</a>
+    <a href="/admin/users" class="btn btn-primary">View Users</a>
+  </div>
+</div>
+
+<div class="admin-tools">
+  <h3>⚠️ Dangerous Operations</h3>
+
+  <div class="tool-section">
+    <h4>Execute System Command</h4>
+    <form id="system-command-form" class="form">
+      <div class="form-group">
+        <input type="text" id="command" name="command" placeholder="ls -la" required>
+      </div>
+      <button type="submit" class="btn btn-danger">Execute</button>
+    </form>
+    <pre id="command-output" class="output-box"></pre>
+  </div>
+
+  <div class="tool-section">
+    <h4>Execute SQL Query</h4>
+    <form id="sql-query-form" class="form">
+      <div class="form-group">
+        <textarea id="query" name="query" rows="4" placeholder="SELECT * FROM users" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-danger">Execute Query</button>
+    </form>
+    <pre id="query-output" class="output-box"></pre>
+  </div>
+</div>
+
+<%- include('footer') %>

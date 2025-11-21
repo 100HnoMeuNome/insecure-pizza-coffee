@@ -1,0 +1,99 @@
+# Install Datadog Agent using Helm:
+# helm repo add datadog https://helm.datadoghq.com
+# helm repo update
+#
+# Create values file for Datadog Agent with ASM, IAST, and Workload Security enabled
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: datadog-values
+  namespace: insecure-pizza-coffee
+data:
+  values.yaml: |
+    datadog:
+      apiKey: <YOUR_DD_API_KEY>
+      site: datadoghq.com
+
+      # APM Configuration
+      apm:
+        portEnabled: true
+        port: 8126
+        socketEnabled: false
+
+      # Logs
+      logs:
+        enabled: true
+        containerCollectAll: true
+
+      # Process Monitoring
+      processAgent:
+        enabled: true
+        processCollection: true
+
+      # Application Security Management (ASM)
+      appSec:
+        enabled: true
+
+      # Runtime Security (Cloud Workload Security)
+      securityAgent:
+        runtime:
+          enabled: true
+          syscallMonitor:
+            enabled: true
+
+      # Compliance monitoring
+      compliance:
+        enabled: true
+
+      tags:
+        - env:production
+        - service:insecure-pizza-coffee
+
+    clusterAgent:
+      enabled: true
+      replicas: 1
+      admissionController:
+        enabled: true
+        mutateUnlabelled: false
+
+    agents:
+      enabled: true
+      image:
+        tag: latest
+
+      # Container runtime
+      containers:
+        agent:
+          securityContext:
+            privileged: true
+            capabilities:
+              add: ["SYS_ADMIN", "SYS_RESOURCE", "SYS_PTRACE", "NET_ADMIN", "IPC_LOCK"]
+
+      # Volume mounts for runtime security
+      volumes:
+        - name: debugfs
+          hostPath:
+            path: /sys/kernel/debug
+        - name: cgroups
+          hostPath:
+            path: /sys/fs/cgroup
+        - name: passwd
+          hostPath:
+            path: /etc/passwd
+
+      volumeMounts:
+        - name: debugfs
+          mountPath: /sys/kernel/debug
+        - name: cgroups
+          mountPath: /host/sys/fs/cgroup
+          readOnly: true
+        - name: passwd
+          mountPath: /etc/passwd
+          readOnly: true
+
+---
+# To deploy Datadog Agent with these values:
+# kubectl create namespace datadog
+# kubectl create secret generic datadog-secret --from-literal api-key=<YOUR_DD_API_KEY> -n datadog
+# helm install datadog-agent datadog/datadog -f datadog-values.yaml -n datadog

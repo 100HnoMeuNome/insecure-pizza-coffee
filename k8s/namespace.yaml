@@ -1,0 +1,9 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: insecure-pizza-coffee
+  labels:
+    name: insecure-pizza-coffee
+    tags.datadoghq.com/env: "production"
+    tags.datadoghq.com/service: "insecure-pizza-coffee"
+    tags.datadoghq.com/version: "1.0.0"

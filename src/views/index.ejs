@@ -1,0 +1,44 @@
+<%- include('header') %>
+
+<div class="hero">
+  <div class="hero-images">
+    <img src="https://images.unsplash.com/photo-1513104890138-7c749659a591?w=400&h=300&fit=crop" alt="Delicious Pizza" class="hero-image">
+    <img src="https://images.unsplash.com/photo-1559056199-641a0ac8b55e?w=400&h=300&fit=crop" alt="Coffee Beans" class="hero-image">
+  </div>
+  <h2><%= __('home_title') %></h2>
+  <p><%= __('home_subtitle') %></p>
+  <% if (!user) { %>
+    <div class="hero-buttons">
+      <a href="/auth/register" class="btn btn-primary"><%= __('register_title') %></a>
+      <a href="/auth/login" class="btn btn-secondary"><%= __('login_title') %></a>
+    </div>
+  <% } else { %>
+    <div class="hero-buttons">
+      <a href="/orders/menu" class="btn btn-primary"><%= __('home_cta') %></a>
+    </div>
+  <% } %>
+</div>
+
+<div class="features">
+  <h3>Our Services</h3>
+  <div class="feature-grid">
+    <div class="feature-card">
+      <h4>🍕 Artisan Pizza</h4>
+      <p>Fresh, handcrafted pizzas made with love and SQL injections</p>
+    </div>
+    <div class="feature-card">
+      <h4>☕ Premium Coffee</h4>
+      <p>Expertly brewed coffee with a side of XSS vulnerabilities</p>
+    </div>
+    <div class="feature-card">
+      <h4>🚚 Fast Delivery</h4>
+      <p>Quick delivery with IDOR access to everyone's orders</p>
+    </div>
+    <div class="feature-card">
+      <h4>💳 Easy Payment</h4>
+      <p>Credit card and PIX (stored in plaintext for your convenience)</p>
+    </div>
+  </div>
+</div>
+
+<%- include('footer') %>

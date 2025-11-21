@@ -1,0 +1,58 @@
+<%- include('header') %>
+
+<h2>Manage Orders</h2>
+
+<div class="search-bar">
+  <form action="/admin/orders" method="GET" class="form">
+    <div class="form-group">
+      <input type="text" name="search" placeholder="Search by username or order ID" value="<%= searchTerm %>">
+      <button type="submit" class="btn btn-primary">Search</button>
+    </div>
+  </form>
+</div>
+
+<% if (orders && orders.length > 0) { %>
+  <table class="admin-table">
+    <thead>
+      <tr>
+        <th>Order ID</th>
+        <th>Username</th>
+        <th>Total</th>
+        <th>Status</th>
+        <th>Payment</th>
+        <th>Date</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% orders.forEach(order => { %>
+        <tr>
+          <td>#<%= order.id %></td>
+          <td><%= order.username %></td>
+          <td>R$ <%= order.total_amount.toFixed(2) %></td>
+          <td>
+            <select class="status-select" data-order-id="<%= order.id %>">
+              <option value="pending" <%= order.status === 'pending' ? 'selected' : '' %>>Pending</option>
+              <option value="confirmed" <%= order.status === 'confirmed' ? 'selected' : '' %>>Confirmed</option>
+              <option value="preparing" <%= order.status === 'preparing' ? 'selected' : '' %>>Preparing</option>
+              <option value="delivering" <%= order.status === 'delivering' ? 'selected' : '' %>>Delivering</option>
+              <option value="delivered" <%= order.status === 'delivered' ? 'selected' : '' %>>Delivered</option>
+              <option value="cancelled" <%= order.status === 'cancelled' ? 'selected' : '' %>>Cancelled</option>
+            </select>
+          </td>
+          <td><%= order.payment_status %></td>
+          <td><%= new Date(order.created_at).toLocaleDateString() %></td>
+          <td>
+            <a href="/orders/confirmation/<%= order.id %>" class="btn btn-sm">View</a>
+          </td>
+        </tr>
+      <% }); %>
+    </tbody>
+  </table>
+<% } else { %>
+  <div class="empty-state">
+    <p>No orders found.</p>
+  </div>
+<% } %>
+
+<%- include('footer') %>

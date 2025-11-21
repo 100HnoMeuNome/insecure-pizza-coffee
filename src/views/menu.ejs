@@ -1,0 +1,37 @@
+<%- include('header') %>
+
+<h2><%= __('menu_title') %></h2>
+
+<div class="category-filter">
+  <a href="/orders/menu" class="filter-btn <%= !selectedCategory ? 'active' : '' %>"><%= __('menu_all') %></a>
+  <a href="/orders/menu?category=pizza" class="filter-btn <%= selectedCategory === 'pizza' ? 'active' : '' %>"><%= __('menu_pizza') %></a>
+  <a href="/orders/menu?category=coffee" class="filter-btn <%= selectedCategory === 'coffee' ? 'active' : '' %>"><%= __('menu_coffee') %></a>
+</div>
+
+<div class="product-grid">
+  <% products.forEach(product => { %>
+    <div class="product-card">
+      <div class="product-image">
+        <img src="<%= product.image_url %>" alt="<%= product.name %>" onerror="this.src='/images/placeholder.jpg'">
+      </div>
+      <div class="product-info">
+        <h3><%= product.name %></h3>
+        <p><%= product.description %></p>
+        <div class="product-footer">
+          <span class="price">R$ <%= product.price.toFixed(2) %></span>
+          <button class="btn btn-primary add-to-cart" data-id="<%= product.id %>" data-name="<%= product.name %>">
+            <%= __('add_to_cart') %>
+          </button>
+        </div>
+      </div>
+    </div>
+  <% }); %>
+</div>
+
+<% if (products.length === 0) { %>
+  <div class="empty-state">
+    <p><%= __('no_products') %></p>
+  </div>
+<% } %>
+
+<%- include('footer') %>
