@@ -41,4 +41,81 @@
   </div>
 </div>
 
+<div class="social-media-section" style="margin: 40px 0; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border-radius: 10px; color: white;">
+  <h3 style="text-align: center; margin-bottom: 20px;">Connect With Us on Social Media</h3>
+  <p style="text-align: center; margin-bottom: 30px;">Share your favorite pizza and coffee moments!</p>
+
+  <div class="social-icons" style="display: flex; justify-content: center; gap: 40px; flex-wrap: wrap;">
+    <div class="social-icon" style="text-align: center; cursor: pointer; transition: transform 0.3s;" onclick="shareFacebook()">
+      <div style="font-size: 60px; margin-bottom: 10px;">📘</div>
+      <h4 style="margin: 0;">Facebook</h4>
+      <p style="font-size: 14px; margin: 5px 0;">Share Updates</p>
+    </div>
+
+    <div class="social-icon" style="text-align: center; cursor: pointer; transition: transform 0.3s;" onclick="shareLinkedIn()">
+      <div style="font-size: 60px; margin-bottom: 10px;">💼</div>
+      <h4 style="margin: 0;">LinkedIn</h4>
+      <p style="font-size: 14px; margin: 5px 0;">Professional Network</p>
+    </div>
+
+    <div class="social-icon" style="text-align: center; cursor: pointer; transition: transform 0.3s;" onclick="shareTwitter()">
+      <div style="font-size: 60px; margin-bottom: 10px;">🐦</div>
+      <h4 style="margin: 0;">Twitter</h4>
+      <p style="font-size: 14px; margin: 5px 0;">Tweet Updates</p>
+    </div>
+  </div>
+</div>
+
+<script>
+  // WARNING: Hardcoded secrets for Datadog secret scanning detection
+  const socialConfig = {
+    facebook: {
+      // Facebook Access Token - Pattern: EAACEdEose0cBA + alphanumeric characters
+      token: 'EAACEdEose0cBAcsAw7uoeXTceg7PduPwcl9m0DbBN',
+      apiUrl: 'https://graph.facebook.com/v12.0/me/feed'
+    },
+    linkedin: {
+      // LinkedIn Secret - Pattern: 16 lowercase alphanumeric characters
+      secret: 'venrnawe6infuo8o',
+      apiUrl: 'https://api.linkedin.com/v2/ugcPosts'
+    },
+    twitter: {
+      // Twitter Access Token - Pattern: numeric + hyphen + 40 alphanumeric chars
+      token: '123456-venrnawe6INFuo8o2u8sllzljolydmdp7szl0yfy',
+      // Alternative format: 45 alphanumeric characters
+      tokenAlt: 'venrnawe6infuo8o2u8sllzljolydmdp7szl0yfyABCDE',
+      apiUrl: 'https://api.twitter.com/2/tweets'
+    }
+  };
+
+  function shareFacebook() {
+    console.log('📘 Sharing to Facebook...');
+    console.log('Using token:', socialConfig.facebook.token);
+    alert('🍕☕ Shared to Facebook! Check console for hardcoded token.');
+  }
+
+  function shareLinkedIn() {
+    console.log('💼 Sharing to LinkedIn...');
+    console.log('Using secret:', socialConfig.linkedin.secret);
+    alert('🍕☕ Shared to LinkedIn! Check console for hardcoded secret.');
+  }
+
+  function shareTwitter() {
+    console.log('🐦 Sharing to Twitter...');
+    console.log('Using token:', socialConfig.twitter.token);
+    console.log('Alternative token:', socialConfig.twitter.tokenAlt);
+    alert('🍕☕ Shared to Twitter! Check console for hardcoded tokens.');
+  }
+
+  // Add hover effect
+  document.querySelectorAll('.social-icon').forEach(icon => {
+    icon.addEventListener('mouseenter', function() {
+      this.style.transform = 'scale(1.1)';
+    });
+    icon.addEventListener('mouseleave', function() {
+      this.style.transform = 'scale(1)';
+    });
+  });
+</script>
+
 <%- include('footer') %>

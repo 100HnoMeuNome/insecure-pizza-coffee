@@ -1,0 +1,306 @@
+# Namespace
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: insecure-pizza-coffee
+  labels:
+    name: insecure-pizza-coffee
+    tags.datadoghq.com/env: "production"
+    tags.datadoghq.com/service: "insecure-pizza-coffee"
+    tags.datadoghq.com/version: "1.0.0"
+---
+# Secrets
+apiVersion: v1
+kind: Secret
+metadata:
+  name: app-secrets
+  namespace: insecure-pizza-coffee
+type: Opaque
+stringData:
+  SESSION_SECRET: "change-me-to-random-secret"
+  DB_USER: "pizzauser"
+  DB_PASSWORD: "pizzapass123"
+  DD_API_KEY: "your-datadog-api-key-here"
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mysql-secrets
+  namespace: insecure-pizza-coffee
+type: Opaque
+stringData:
+  MYSQL_ROOT_PASSWORD: "rootpass123"
+  MYSQL_USER: "pizzauser"
+  MYSQL_PASSWORD: "pizzapass123"
+  MYSQL_DATABASE: "pizzacoffee"
+---
+# ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: app-config
+  namespace: insecure-pizza-coffee
+data:
+  NODE_ENV: "production"
+  PORT: "3000"
+  DB_HOST: "mysql-service"
+  DB_PORT: "3306"
+  DB_NAME: "pizzacoffee"
+  DD_SITE: "datadoghq.com"
+  DD_SERVICE: "insecure-pizza-coffee"
+  DD_ENV: "production"
+  DD_VERSION: "1.0.0"
+  DD_TRACE_ENABLED: "true"
+  DD_LOGS_INJECTION: "true"
+  DD_RUNTIME_METRICS_ENABLED: "true"
+  DD_PROFILING_ENABLED: "true"
+  DD_APPSEC_ENABLED: "true"
+  DD_APPSEC_WAF_TIMEOUT: "5000"
+  DD_APPSEC_SCA_ENABLED: "true"
+  DD_IAST_ENABLED: "true"
+  DD_IAST_REQUEST_SAMPLING: "100"
+  DD_AGENT_HOST: "datadog-agent.datadog.svc.cluster.local"
+  DD_TRACE_AGENT_PORT: "8126"
+---
+# MySQL PVC
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: mysql-pvc
+  namespace: insecure-pizza-coffee
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 5Gi
+---
+# MySQL Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: insecure-pizza-coffee
+  labels:
+    app: mysql
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+      - name: mysql
+        image: mysql:8.0
+        ports:
+        - containerPort: 3306
+          name: mysql
+        env:
+        - name: MYSQL_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secrets
+              key: MYSQL_ROOT_PASSWORD
+        - name: MYSQL_DATABASE
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secrets
+              key: MYSQL_DATABASE
+        - name: MYSQL_USER
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secrets
+              key: MYSQL_USER
+        - name: MYSQL_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mysql-secrets
+              key: MYSQL_PASSWORD
+        volumeMounts:
+        - name: mysql-storage
+          mountPath: /var/lib/mysql
+        livenessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - mysqladmin
+            - ping
+            - -h
+            - localhost
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+      volumes:
+      - name: mysql-storage
+        persistentVolumeClaim:
+          claimName: mysql-pvc
+---
+# MySQL Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql-service
+  namespace: insecure-pizza-coffee
+spec:
+  selector:
+    app: mysql
+  ports:
+  - port: 3306
+    targetPort: 3306
+    protocol: TCP
+  type: ClusterIP
+---
+# Application Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pizzacoffee-app
+  namespace: insecure-pizza-coffee
+  labels:
+    app: pizzacoffee-app
+    tags.datadoghq.com/env: "production"
+    tags.datadoghq.com/service: "insecure-pizza-coffee"
+    tags.datadoghq.com/version: "1.0.0"
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: pizzacoffee-app
+  template:
+    metadata:
+      labels:
+        app: pizzacoffee-app
+        tags.datadoghq.com/env: "production"
+        tags.datadoghq.com/service: "insecure-pizza-coffee"
+        tags.datadoghq.com/version: "1.0.0"
+        admission.datadoghq.com/enabled: "true"
+      annotations:
+        ad.datadoghq.com/pizzacoffee-app.logs: '[{"source":"nodejs","service":"insecure-pizza-coffee"}]'
+    spec:
+      containers:
+      - name: pizzacoffee-app
+        image: YOUR_REGISTRY/insecure-pizza-coffee:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 3000
+          name: http
+          protocol: TCP
+        envFrom:
+        - configMapRef:
+            name: app-config
+        env:
+        - name: SESSION_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: SESSION_SECRET
+        - name: DB_USER
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DB_USER
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DB_PASSWORD
+        - name: DD_API_KEY
+          valueFrom:
+            secretKeyRef:
+              name: app-secrets
+              key: DD_API_KEY
+        - name: DD_AGENT_HOST
+          valueFrom:
+            fieldRef:
+              fieldPath: status.hostIP
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 3000
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 3000
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        securityContext:
+          runAsNonRoot: false
+          allowPrivilegeEscalation: true
+---
+# Application Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: pizzacoffee-service
+  namespace: insecure-pizza-coffee
+  labels:
+    app: pizzacoffee-app
+spec:
+  type: LoadBalancer
+  selector:
+    app: pizzacoffee-app
+  ports:
+  - port: 80
+    targetPort: 3000
+    protocol: TCP
+    name: http
+---
+# Horizontal Pod Autoscaler
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: pizzacoffee-hpa
+  namespace: insecure-pizza-coffee
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: pizzacoffee-app
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
