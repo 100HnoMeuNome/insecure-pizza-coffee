@@ -1,0 +1,24 @@
+# Terraform Variables Example
+# Copy this file to terraform.tfvars and update with your values
+
+# AWS Configuration
+aws_region      = "us-east-1"
+cluster_name    = "insecure-pizza-coffee-eks"
+cluster_version = "1.28"
+environment     = "dev"
+
+# Datadog Configuration
+datadog_api_key = "your-datadog-api-key-here"  # Get from: https://app.datadoghq.com/organization-settings/api-keys
+datadog_site    = "datadoghq.com"              # or datadoghq.eu, us3.datadoghq.com, etc.
+
+# VPC Configuration
+vpc_cidr = "10.0.0.0/16"
+
+# EKS Node Configuration
+node_instance_type = "t3.medium"  # t3.small for lower cost, t3.large for more resources
+desired_nodes      = 2            # Number of worker nodes
+min_nodes          = 1            # Minimum nodes for autoscaling
+max_nodes          = 4            # Maximum nodes for autoscaling
+
+# Security Configuration (INTENTIONALLY INSECURE)
+enable_public_access = true  # WARNING: Exposes EKS API to internet
