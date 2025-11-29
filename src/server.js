@@ -38,7 +38,10 @@ require('dotenv').config();
 const express = require('express');
 const bodyParser = require('body-parser');
 const cookieParser = require('cookie-parser');
-const session = require('express-session');
+// VULNERABILITY: Using cookie-session instead of express-session
+// This stores session data in client-side cookies instead of server-side
+// Security risks: session data tampering, data exposure, size limitations
+const session = require('cookie-session');
 const path = require('path');
 const i18n = require('i18n');
 
@@ -73,16 +76,24 @@ app.use(cookieParser());
 app.use(i18n.init);
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Intentionally insecure session configuration for testing
+// VULNERABILITY: Intentionally insecure cookie-session configuration
+// Security Issues:
+// 1. Session data stored in CLIENT-SIDE cookies (can be read/modified by user)
+// 2. No server-side validation of session integrity
+// 3. Session data visible in browser dev tools
+// 4. Weak secret key makes signing vulnerable
+// 5. httpOnly: false makes cookies accessible via JavaScript (XSS attacks)
+// 6. secure: false allows transmission over HTTP (MITM attacks)
 app.use(session({
-  secret: process.env.SESSION_SECRET || 'insecure-secret',
-  resave: true,
-  saveUninitialized: true,
-  cookie: {
-    secure: false, // Should be true in production with HTTPS
-    httpOnly: false, // Vulnerable to XSS
-    maxAge: 24 * 60 * 60 * 1000
-  }
+  name: 'session',
+  keys: [process.env.SESSION_SECRET || 'insecure-secret', 'backup-key'],
+
+  // Cookie options - all insecure for testing
+  maxAge: 24 * 60 * 60 * 1000, // 24 hours
+  secure: false,    // VULNERABILITY: Allows transmission over HTTP
+  httpOnly: false,  // VULNERABILITY: Accessible via JavaScript (XSS)
+  signed: true,     // Uses weak secret key
+  overwrite: true
 }));
 
 // Custom middleware to add Datadog trace context

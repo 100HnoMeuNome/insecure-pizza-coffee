@@ -1,4 +1,6 @@
 version: '3.8'
+# Note: cgroupns_mode requires Docker Compose v2.1+ or use 'docker run --cgroupns host'
+# For full CWS compatibility, ensure Docker version 20.10+ is installed
 
 services:
   mysql:
@@ -91,6 +93,8 @@ services:
   datadog-agent:
     image: gcr.io/datadoghq/agent:latest
     container_name: datadog-agent
+    pid: host
+    ipc: host
     environment:
       DD_API_KEY: ${DD_API_KEY}
       DD_SITE: ${DD_SITE:-datadoghq.com}
@@ -106,9 +110,20 @@ services:
       DD_APPSEC_ENABLED: true
       DD_APPSEC_SCA_ENABLED: true
 
-      # Runtime Security (Workload Security)
+      # Cloud Workload Security (CWS) - Runtime Security
       DD_RUNTIME_SECURITY_CONFIG_ENABLED: true
+      DD_RUNTIME_SECURITY_CONFIG_REMOTE_CONFIGURATION_ENABLED: true
+
+      # Compliance and Host Benchmarks
+      DD_COMPLIANCE_CONFIG_ENABLED: true
+      DD_COMPLIANCE_CONFIG_HOST_BENCHMARKS_ENABLED: true
+
+      # Host Root for CWS file integrity monitoring
+      HOST_ROOT: /host/root
+
+      # Remote Configuration
       DD_REMOTE_CONFIGURATION_ENABLED: true
+
       # Process monitoring
       DD_PROCESS_AGENT_ENABLED: true
       DD_CONTAINER_EXCLUDE: "name:datadog-agent"
@@ -123,11 +138,21 @@ services:
     ports:
       - "8126:8126"
     volumes:
+      # Docker socket for container monitoring
       - /var/run/docker.sock:/var/run/docker.sock:ro
+      # Host proc for process monitoring
       - /proc/:/host/proc/:ro
+      # Host cgroup for container metrics
       - /sys/fs/cgroup/:/host/sys/fs/cgroup:ro
+      # User and group info for CWS
       - /etc/passwd:/etc/passwd:ro
+      - /etc/group:/etc/group:ro
+      # Host root filesystem for CWS file integrity monitoring
+      - /:/host/root:ro
+      # Kernel debug for eBPF-based monitoring
       - /sys/kernel/debug:/sys/kernel/debug
+      # OS release information
+      - /etc/os-release:/etc/os-release:ro
     networks:
       - pizzacoffee-network
     cap_add:
