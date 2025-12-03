@@ -33,6 +33,8 @@ router.post('/login', async (req, res) => {
     if (users.length === 0) {
       if (span) {
         span.setTag('auth.failure', 'user_not_found');
+        span.setTag('appsec.events.users.login.failure.usr.id', username);
+        span.setTag('appsec.events.users.login.failure.usr.exists', false);
       }
       return res.render('login', { error: 'Invalid username or password', user: null });
     }
@@ -52,6 +54,8 @@ router.post('/login', async (req, res) => {
     if (md5Password !== user.password) {
       if (span) {
         span.setTag('auth.failure', 'invalid_password');
+        span.setTag('appsec.events.users.login.failure.usr.id', user.id.toString());
+        span.setTag('appsec.events.users.login.failure.usr.exists', true);
       }
       return res.render('login', { error: 'Invalid username or password', user: null });
     }
@@ -70,6 +74,7 @@ router.post('/login', async (req, res) => {
     req.session.user = {
       id: user.id,
       username: user.username,
+      email: user.email, // Add email for Datadog user tracking
       isAdmin: user.is_admin
     };
 
@@ -80,16 +85,41 @@ router.post('/login', async (req, res) => {
       maxAge: 24 * 60 * 60 * 1000
     });
 
+    // Set user information in Datadog APM for tracking and blocking capability
+    try {
+      tracer.setUser({
+        id: user.id.toString(),
+        email: user.email || undefined,
+        name: user.username,
+        // Custom fields
+        isAdmin: user.is_admin,
+        sessionId: req.sessionID || undefined
+      });
+    } catch (blockError) {
+      // If ASM blocks the user during login
+      if (blockError.type === 'aborted') {
+        console.log(`[ASM] Login blocked for user: ${user.username} (ID: ${user.id})`);
+        req.session.destroy();
+        return res.status(403).render('login', {
+          error: 'Access blocked by security policy. Your account has been flagged for suspicious activity.',
+          user: null
+        });
+      }
+      throw blockError;
+    }
+
     if (span) {
       span.setTag('auth.success', true);
       span.setTag('auth.method', 'jwt_and_session');
       span.setTag('usr.id', user.id);
       span.setTag('usr.name', user.username);
+      span.setTag('usr.email', user.email);
       span.setTag('usr.is_admin', user.is_admin);
       span.setTag('session.id', req.sessionID);
       span.setTag('jwt.generated', true);
       span.setTag('jwt.stored_in_cookie', true);
       span.setTag('vulnerability.jwt_contains_password', true);
+      span.setTag('appsec.events.users.login.success', true);
     }
 
     res.redirect('/orders/menu');
@@ -223,11 +253,37 @@ router.post('/api/login', async (req, res) => {
       password: user.password // VULNERABILITY!
     });
 
+    // Set user information in Datadog APM for tracking and blocking capability
+    try {
+      tracer.setUser({
+        id: user.id.toString(),
+        email: user.email || undefined,
+        name: user.username,
+        // Custom fields
+        isAdmin: user.is_admin
+      });
+    } catch (blockError) {
+      // If ASM blocks the user during API login
+      if (blockError.type === 'aborted') {
+        console.log(`[ASM] API Login blocked for user: ${user.username} (ID: ${user.id})`);
+        return res.status(403).json({
+          error: 'Access blocked by security policy',
+          blocked: true,
+          reason: 'Your account has been flagged for suspicious activity'
+        });
+      }
+      throw blockError;
+    }
+
     if (span) {
       span.setTag('auth.success', true);
       span.setTag('auth.method', 'jwt_api');
       span.setTag('usr.id', user.id);
+      span.setTag('usr.name', user.username);
+      span.setTag('usr.email', user.email);
+      span.setTag('usr.is_admin', user.is_admin);
       span.setTag('jwt.exposed_in_response', true);
+      span.setTag('appsec.events.users.login.success', true);
     }
 
     // VULNERABILITY: Returning sensitive data in response

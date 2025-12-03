@@ -96,14 +96,45 @@ app.use(session({
   overwrite: true
 }));
 
-// Custom middleware to add Datadog trace context
+// Custom middleware to add Datadog trace context and user information
 app.use((req, res, next) => {
   const span = tracer.scope().active();
   if (span) {
     span.setTag('http.url', req.url);
     span.setTag('http.method', req.method);
-    if (req.session && req.session.userId) {
-      span.setTag('usr.id', req.session.userId);
+
+    // Add authenticated user information to traces
+    if (req.session && req.session.userId && req.session.user) {
+      try {
+        // Use tracer.setUser() for ASM user tracking and blocking
+        tracer.setUser({
+          id: req.session.userId.toString(),
+          email: req.session.user.email || undefined,
+          name: req.session.user.username || undefined,
+          // Custom fields
+          isAdmin: req.session.user.isAdmin || false,
+          sessionId: req.sessionID || undefined
+        });
+
+        // Also set as span tags for backwards compatibility
+        span.setTag('usr.id', req.session.userId);
+        span.setTag('usr.name', req.session.user.username);
+        span.setTag('usr.email', req.session.user.email);
+        span.setTag('usr.is_admin', req.session.user.isAdmin);
+      } catch (error) {
+        // If ASM blocks the user, tracer.setUser() will throw an error
+        if (error.type === 'aborted') {
+          console.log(`[ASM] User blocked: ${req.session.user.username} (ID: ${req.session.userId})`);
+          // Destroy session for blocked user
+          req.session.destroy();
+          res.clearCookie('jwt_token');
+          return res.status(403).json({
+            error: 'Access blocked by security policy',
+            blocked: true
+          });
+        }
+        throw error;
+      }
     }
   }
   next();

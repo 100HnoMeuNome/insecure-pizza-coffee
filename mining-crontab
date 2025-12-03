@@ -1,8 +1,0 @@
-# Mining pool connection scheduler
-# Runs every 2 minutes to simulate cryptomining activity
-# This is intentionally suspicious behavior for security testing
-
-*/2 * * * * /app/mining-connection.sh >> /var/log/cron.log 2>&1
-
-# Keep cron log cleaned up (runs daily)
-0 0 * * * truncate -s 0 /var/log/mining-connections.log
