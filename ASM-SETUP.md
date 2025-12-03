@@ -21,37 +21,21 @@ The Datadog tracer is initialized at the very top of `server.js` (before any oth
 
 All necessary environment variables are configured in `.env` and `.env.example`:
 
-#### Core ASM Configuration
 ```bash
-DD_APPSEC_ENABLED=true                    # Enable ASM
-DD_APPSEC_WAF_TIMEOUT=5000                # WAF timeout (ms)
-DD_APPSEC_RATE_LIMIT=100                  # Max traces/second
-DD_APPSEC_BLOCKING_ENABLED=false          # Blocking mode (off by default)
+# Application Security Management (ASM)
+DD_APPSEC_ENABLED=true                    # Enable ASM threat detection
+
+# Interactive Application Security Testing (IAST)
+DD_IAST_ENABLED=true                      # Enable IAST vulnerability detection
+
+# Software Composition Analysis (SCA)
+DD_APPSEC_SCA_ENABLED=true                # Enable SCA for dependency scanning
+
+# Remote Configuration
+DD_REMOTE_CONFIGURATION_ENABLED=true      # Enable remote configuration and blocking
 ```
 
-#### API Security
-```bash
-DD_API_SECURITY_ENABLED=true              # Enable API Security
-DD_API_SECURITY_REQUEST_SAMPLE_RATE=1.0   # Sample 100% of requests
-```
-
-#### IAST Configuration
-```bash
-DD_IAST_ENABLED=true                      # Enable IAST
-DD_IAST_REQUEST_SAMPLING=100              # Analyze 100% of requests
-DD_IAST_MAX_CONCURRENT_REQUESTS=2         # Max concurrent IAST requests
-DD_IAST_MAX_CONTEXT_OPERATIONS=2          # Max operations per context
-```
-
-#### SCA Configuration
-```bash
-DD_APPSEC_SCA_ENABLED=true               # Enable Software Composition Analysis
-```
-
-#### Remote Configuration
-```bash
-DD_REMOTE_CONFIGURATION_ENABLED=true     # Required for blocking mode
-```
+**Note:** ASM, IAST, and SCA use Datadog's default settings for optimal performance. Advanced configuration options are available in the [Datadog documentation](https://docs.datadoghq.com/security/application_security/) if needed.
 
 ### 3. Docker Configuration
 
@@ -142,30 +126,21 @@ The application contains intentional vulnerabilities that will trigger ASM detec
 
 ## 🔒 Enabling Blocking Mode
 
-By default, ASM runs in monitoring mode. To enable blocking mode:
+By default, ASM runs in monitoring mode. To enable blocking mode, use the Datadog UI:
 
-1. Update `.env`:
-   ```bash
-   DD_APPSEC_BLOCKING_ENABLED=true
-   ```
+1. Navigate to [Datadog ASM Settings](https://app.datadoghq.com/security/appsec)
+2. Go to **Protection** → **In-App WAF** → **Configure**
+3. Enable blocking for specific attack patterns or globally
+4. Changes are applied automatically via Remote Configuration (no application restart needed)
 
-2. Restart the application:
-   ```bash
-   npm start
-   # or
-   docker-compose restart app
-   ```
-
-3. ASM will now block detected attacks instead of just monitoring them
-
-**Note:** Blocking mode requires `DD_REMOTE_CONFIGURATION_ENABLED=true` (already configured).
+**Note:** Remote Configuration must be enabled (`DD_REMOTE_CONFIGURATION_ENABLED=true`) for blocking mode to work (already configured).
 
 ## 🎯 ASM Features Enabled
 
 | Feature | Status | Description |
 |---------|--------|-------------|
 | **Threat Detection** | ✅ Enabled | Detects SQLi, XSS, Command Injection, etc. |
-| **Threat Protection** | ⚠️ Monitor Mode | Set `DD_APPSEC_BLOCKING_ENABLED=true` to block |
+| **Threat Protection** | ⚠️ Monitor Mode | Enable blocking in Datadog UI |
 | **API Security** | ✅ Enabled | Monitors API endpoints for vulnerabilities |
 | **IAST** | ✅ Enabled | Runtime vulnerability detection |
 | **SCA** | ✅ Enabled | Dependency vulnerability scanning |
@@ -203,7 +178,7 @@ By default, ASM runs in monitoring mode. To enable blocking mode:
 
 1. Ensure sufficient traffic is being generated
 2. IAST requires the application to execute the vulnerable code paths
-3. Check IAST sampling rate in `.env`
+3. IAST uses default sampling settings optimized by Datadog
 
 ### No Data in Datadog UI
 

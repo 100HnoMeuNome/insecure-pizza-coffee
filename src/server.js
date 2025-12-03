@@ -7,28 +7,15 @@ const tracer = require('dd-trace').init({
 
   // Application Security Management (ASM)
   appsec: {
-    enabled: process.env.DD_APPSEC_ENABLED === 'true',
-    wafTimeout: parseInt(process.env.DD_APPSEC_WAF_TIMEOUT) || 5000,
-    rateLimit: parseInt(process.env.DD_APPSEC_RATE_LIMIT) || 100,
-    rules: process.env.DD_APPSEC_RULES,
-    // Enable blocking mode (default is monitoring only)
-    blockingMode: process.env.DD_APPSEC_BLOCKING_ENABLED === 'true',
-    // Report API security metrics
-    apiSecurity: {
-      enabled: process.env.DD_API_SECURITY_ENABLED === 'true',
-      requestSampling: parseFloat(process.env.DD_API_SECURITY_REQUEST_SAMPLE_RATE) || 0.1
-    }
+    enabled: process.env.DD_APPSEC_ENABLED === 'true'
   },
 
   // Interactive Application Security Testing (IAST)
   iast: {
-    enabled: process.env.DD_IAST_ENABLED === 'true',
-    requestSampling: parseFloat(process.env.DD_IAST_REQUEST_SAMPLING) || 100,
-    maxConcurrentRequests: parseInt(process.env.DD_IAST_MAX_CONCURRENT_REQUESTS) || 2,
-    maxContextOperations: parseInt(process.env.DD_IAST_MAX_CONTEXT_OPERATIONS) || 2
+    enabled: process.env.DD_IAST_ENABLED === 'true'
   },
 
-  // Remote Configuration (required for ASM features like blocking)
+  // Remote Configuration
   remoteConfig: {
     enabled: process.env.DD_REMOTE_CONFIGURATION_ENABLED !== 'false'
   }

@@ -106,9 +106,10 @@ Ensure these environment variables are set:
 
 ```bash
 DD_APPSEC_ENABLED=true
-DD_APPSEC_BLOCKING_ENABLED=true
 DD_REMOTE_CONFIGURATION_ENABLED=true
 ```
+
+Enable blocking mode in the Datadog UI (see [ASM-SETUP.md](ASM-SETUP.md#-enabling-blocking-mode) for instructions).
 
 ### 2. Create a User to Block
 
@@ -204,8 +205,11 @@ Action: Monitor (or Block if enabled)
 # Enable ASM
 DD_APPSEC_ENABLED=true
 
-# Enable blocking mode
-DD_APPSEC_BLOCKING_ENABLED=true
+# Enable IAST
+DD_IAST_ENABLED=true
+
+# Enable SCA
+DD_APPSEC_SCA_ENABLED=true
 
 # Enable Remote Configuration (required for user blocking)
 DD_REMOTE_CONFIGURATION_ENABLED=true

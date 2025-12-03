@@ -52,20 +52,10 @@ services:
 
       # Application Security Management (ASM)
       DD_APPSEC_ENABLED: true
-      DD_APPSEC_WAF_TIMEOUT: 5000
-      DD_APPSEC_RATE_LIMIT: 100
-      DD_APPSEC_BLOCKING_ENABLED: ${DD_APPSEC_BLOCKING_ENABLED:-false}
       DD_APPSEC_SCA_ENABLED: true
-
-      # API Security
-      DD_API_SECURITY_ENABLED: true
-      DD_API_SECURITY_REQUEST_SAMPLE_RATE: 1.0
 
       # IAST
       DD_IAST_ENABLED: true
-      DD_IAST_REQUEST_SAMPLING: 100
-      DD_IAST_MAX_CONCURRENT_REQUESTS: 2
-      DD_IAST_MAX_CONTEXT_OPERATIONS: 2
 
       # Remote Configuration
       DD_REMOTE_CONFIGURATION_ENABLED: true

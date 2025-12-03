@@ -33,17 +33,12 @@ console.log();
 // Check ASM configuration
 const asmConfig = {
   'DD_APPSEC_ENABLED': process.env.DD_APPSEC_ENABLED,
-  'DD_APPSEC_WAF_TIMEOUT': process.env.DD_APPSEC_WAF_TIMEOUT,
-  'DD_APPSEC_RATE_LIMIT': process.env.DD_APPSEC_RATE_LIMIT,
-  'DD_APPSEC_BLOCKING_ENABLED': process.env.DD_APPSEC_BLOCKING_ENABLED,
-  'DD_API_SECURITY_ENABLED': process.env.DD_API_SECURITY_ENABLED,
-  'DD_API_SECURITY_REQUEST_SAMPLE_RATE': process.env.DD_API_SECURITY_REQUEST_SAMPLE_RATE,
 };
 
 console.log('🛡️  Application Security Management (ASM):');
 console.log('-'.repeat(60));
 for (const [key, value] of Object.entries(asmConfig)) {
-  const status = value ? '✅' : '❌';
+  const status = value === 'true' ? '✅' : '❌';
   console.log(`${status} ${key}: ${value || '(not set)'}`);
 }
 console.log();
@@ -51,15 +46,12 @@ console.log();
 // Check IAST configuration
 const iastConfig = {
   'DD_IAST_ENABLED': process.env.DD_IAST_ENABLED,
-  'DD_IAST_REQUEST_SAMPLING': process.env.DD_IAST_REQUEST_SAMPLING,
-  'DD_IAST_MAX_CONCURRENT_REQUESTS': process.env.DD_IAST_MAX_CONCURRENT_REQUESTS,
-  'DD_IAST_MAX_CONTEXT_OPERATIONS': process.env.DD_IAST_MAX_CONTEXT_OPERATIONS,
 };
 
 console.log('🔍 Interactive Application Security Testing (IAST):');
 console.log('-'.repeat(60));
 for (const [key, value] of Object.entries(iastConfig)) {
-  const status = value ? '✅' : '❌';
+  const status = value === 'true' ? '✅' : '❌';
   console.log(`${status} ${key}: ${value || '(not set)'}`);
 }
 console.log();
@@ -72,7 +64,7 @@ const scaConfig = {
 console.log('📦 Software Composition Analysis (SCA):');
 console.log('-'.repeat(60));
 for (const [key, value] of Object.entries(scaConfig)) {
-  const status = value ? '✅' : '❌';
+  const status = value === 'true' ? '✅' : '❌';
   console.log(`${status} ${key}: ${value || '(not set)'}`);
 }
 console.log();

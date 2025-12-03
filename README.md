@@ -73,15 +73,11 @@ This application includes the following security vulnerabilities for testing:
 The application supports the following ASM environment variables:
 
 - `DD_APPSEC_ENABLED=true` - Enable Application Security Monitoring
-- `DD_APPSEC_WAF_TIMEOUT=5000` - WAF timeout in milliseconds
-- `DD_APPSEC_RATE_LIMIT=100` - Maximum number of traces analyzed per second
-- `DD_APPSEC_BLOCKING_ENABLED=false` - Enable blocking mode (blocks attacks instead of just monitoring)
-- `DD_API_SECURITY_ENABLED=true` - Enable API Security detection
-- `DD_API_SECURITY_REQUEST_SAMPLE_RATE=1.0` - API Security sampling rate (0.0 to 1.0)
 - `DD_IAST_ENABLED=true` - Enable Interactive Application Security Testing
-- `DD_IAST_REQUEST_SAMPLING=100` - Percentage of requests to analyze with IAST
 - `DD_APPSEC_SCA_ENABLED=true` - Enable Software Composition Analysis
-- `DD_REMOTE_CONFIGURATION_ENABLED=true` - Enable remote configuration (required for blocking)
+- `DD_REMOTE_CONFIGURATION_ENABLED=true` - Enable remote configuration and blocking
+
+All features use Datadog's optimized default settings. For advanced configuration options, see the [Datadog ASM documentation](https://docs.datadoghq.com/security/application_security/).
 
 ## 📦 Prerequisites
 
