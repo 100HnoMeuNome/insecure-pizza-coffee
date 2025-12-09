@@ -33,6 +33,16 @@ function authenticateJWT(req, res, next) {
   if (!token) {
     // No JWT, fall back to session
     if (req.session && req.session.userId) {
+      // Set user information for ASM tracking
+      if (req.session.user) {
+        tracer.setUser({
+          id: req.session.userId.toString(),
+          email: req.session.user.email || undefined,
+          name: req.session.user.username || undefined,
+          isAdmin: req.session.user.isAdmin || false
+        });
+      }
+
       if (span) {
         span.setTag('auth.method', 'session');
         span.setTag('usr.id', req.session.userId);
@@ -73,6 +83,14 @@ function authenticateJWT(req, res, next) {
   // VULNERABILITY: Exposing decoded token data to all routes
   req.jwtData = decoded;
   req.user = decoded;
+
+  // Set user information for ASM tracking
+  tracer.setUser({
+    id: decoded.id.toString(),
+    email: decoded.email || undefined,
+    name: decoded.username || undefined,
+    isAdmin: decoded.isAdmin || false
+  });
 
   if (span) {
     span.setTag('auth.success', true);

@@ -23,12 +23,30 @@
         <% }); %>
       </tbody>
       <tfoot>
+        <tr id="subtotal-row">
+          <td colspan="2"><strong>Subtotal</strong></td>
+          <td><strong>R$ <span id="subtotal"><%= total.toFixed(2) %></span></strong></td>
+        </tr>
+        <tr id="discount-row" style="display: none; color: #28a745;">
+          <td colspan="2"><strong>Discount</strong></td>
+          <td><strong>- R$ <span id="discount">0.00</span></strong></td>
+        </tr>
         <tr>
           <td colspan="2"><strong>Total</strong></td>
-          <td><strong>R$ <%= total.toFixed(2) %></strong></td>
+          <td><strong>R$ <span id="final-total"><%= total.toFixed(2) %></span></strong></td>
         </tr>
       </tfoot>
     </table>
+
+    <!-- Coupon Section -->
+    <div class="form-group" style="margin-top: 15px;">
+      <label for="couponCode">Discount Coupon</label>
+      <div style="display: flex; gap: 10px;">
+        <input type="text" id="couponCode" name="couponCode" placeholder="Enter coupon code" style="flex: 1;">
+        <button type="button" id="apply-coupon-btn" class="btn btn-secondary">Apply</button>
+      </div>
+      <small id="coupon-message" style="color: #666;"></small>
+    </div>
   </div>
 
   <div class="checkout-section">
@@ -46,7 +64,8 @@
 
       <div class="form-group">
         <label for="notes">Order Notes</label>
-        <textarea id="notes" name="notes" rows="3" placeholder="Special instructions..."></textarea>
+        <textarea id="notes" name="notes" rows="3" placeholder="Special instructions for delivery..."></textarea>
+        <small style="color: #666;">Add any special delivery instructions or dietary requirements</small>
       </div>
 
       <h3>Payment Method</h3>
@@ -68,24 +87,25 @@
           <img src="https://upload.wikimedia.org/wikipedia/commons/f/fa/American_Express_logo_%282018%29.svg" alt="American Express" class="card-logo">
         </div>
         <div class="form-group">
-          <label for="cardNumber">Card Number</label>
-          <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456">
+          <label for="cardNumber">Card Number *</label>
+          <input type="text" id="cardNumber" name="cardNumber" placeholder="1234 5678 9012 3456" maxlength="19" required>
+          <small id="card-validation-message" style="display: block; margin-top: 5px;"></small>
         </div>
 
         <div class="form-group">
-          <label for="cardHolder">Card Holder Name</label>
-          <input type="text" id="cardHolder" name="cardHolder" placeholder="John Doe">
+          <label for="cardHolder">Card Holder Name *</label>
+          <input type="text" id="cardHolder" name="cardHolder" placeholder="John Doe" required>
         </div>
 
         <div class="form-row">
           <div class="form-group">
-            <label for="expiryDate">Expiry Date</label>
-            <input type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY">
+            <label for="expiryDate">Expiry Date *</label>
+            <input type="text" id="expiryDate" name="expiryDate" placeholder="MM/YY" maxlength="5" required>
           </div>
 
           <div class="form-group">
-            <label for="cvv">CVV</label>
-            <input type="text" id="cvv" name="cvv" placeholder="123">
+            <label for="cvv">CVV *</label>
+            <input type="text" id="cvv" name="cvv" placeholder="123" maxlength="4" required>
           </div>
         </div>
       </div>

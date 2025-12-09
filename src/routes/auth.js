@@ -4,6 +4,7 @@ const crypto = require('crypto');
 const db = require('../config/database');
 const tracer = require('dd-trace');
 const { generateToken } = require('../utils/jwt');
+const logger = require('../config/logger');
 
 // Login page
 router.get('/login', (req, res) => {
@@ -36,6 +37,14 @@ router.post('/login', async (req, res) => {
         span.setTag('appsec.events.users.login.failure.usr.id', username);
         span.setTag('appsec.events.users.login.failure.usr.exists', false);
       }
+
+      // Log failed login attempt with trace correlation
+      logger.warn('Login failed - user not found', {
+        username,
+        ip: req.ip,
+        user_agent: req.headers['user-agent']
+      });
+
       return res.render('login', { error: 'Invalid username or password', user: null });
     }
 
@@ -57,6 +66,15 @@ router.post('/login', async (req, res) => {
         span.setTag('appsec.events.users.login.failure.usr.id', user.id.toString());
         span.setTag('appsec.events.users.login.failure.usr.exists', true);
       }
+
+      // Log failed login attempt with trace correlation
+      logger.warn('Login failed - invalid password', {
+        user_id: user.id,
+        username: user.username,
+        ip: req.ip,
+        user_agent: req.headers['user-agent']
+      });
+
       return res.render('login', { error: 'Invalid username or password', user: null });
     }
 
@@ -99,7 +117,7 @@ router.post('/login', async (req, res) => {
       // If ASM blocks the user during login
       if (blockError.type === 'aborted') {
         console.log(`[ASM] Login blocked for user: ${user.username} (ID: ${user.id})`);
-        req.session.destroy();
+        req.session = null;
         return res.status(403).render('login', {
           error: 'Access blocked by security policy. Your account has been flagged for suspicious activity.',
           user: null
@@ -122,9 +140,26 @@ router.post('/login', async (req, res) => {
       span.setTag('appsec.events.users.login.success', true);
     }
 
+    // Log successful login with trace correlation
+    logger.info('User logged in successfully', {
+      user_id: user.id,
+      username: user.username,
+      email: user.email,
+      is_admin: user.is_admin,
+      ip: req.ip,
+      user_agent: req.headers['user-agent']
+    });
+
     res.redirect('/orders/menu');
   } catch (error) {
-    console.error('Login error:', error);
+    // Log error with trace correlation
+    logger.error('Login error occurred', {
+      error: error.message,
+      stack: error.stack,
+      username,
+      ip: req.ip
+    });
+
     if (span) {
       span.setTag('error', true);
       span.setTag('error.type', error.name);
@@ -211,7 +246,8 @@ router.post('/register', async (req, res) => {
 // Logout
 router.get('/logout', (req, res) => {
   // VULNERABILITY: JWT not invalidated (no blacklist)
-  req.session.destroy();
+  // Clear cookie-session (it doesn't have a destroy() method)
+  req.session = null;
   res.clearCookie('jwt_token');
   res.redirect('/');
 });

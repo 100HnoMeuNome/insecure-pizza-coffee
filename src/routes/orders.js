@@ -168,9 +168,50 @@ router.post('/place', requireAuth, async (req, res) => {
   try {
     const total = cart.reduce((sum, item) => sum + (item.price * item.quantity), 0);
 
+    // VULNERABILITY: Command Injection in Order Notes Processing
+    // "Feature": Validate order notes length using shell command (INTENTIONALLY INSECURE)
+    let notesValidation = 'valid';
+    if (notes && notes.trim() !== '') {
+      const { execSync } = require('child_process');
+
+      if (span) {
+        span.setTag('vulnerability.type', 'command_injection');
+        span.setTag('vulnerability.category', 'injection');
+        span.setTag('attack.vector', 'os_command');
+        span.setTag('input.field', 'order_notes');
+        span.setTag('notes.content', notes);
+      }
+
+      try {
+        // CRITICAL VULNERABILITY: Directly executing user input in shell command
+        // Attacker can inject commands like: ; whoami; or && cat /etc/passwd
+        const command = `echo "${notes}" | wc -c`;
+        const output = execSync(command, { encoding: 'utf8', timeout: 5000 });
+        notesValidation = output.trim();
+
+        if (span) {
+          span.setTag('command.executed', command);
+          span.setTag('command.output', output.trim());
+          span.setTag('vulnerability.exploitable', true);
+        }
+      } catch (cmdError) {
+        console.error('Command execution error:', cmdError.message);
+        if (span) {
+          span.setTag('command.error', cmdError.message);
+        }
+        // Continue even if command fails
+      }
+    }
+
     // VULNERABILITY: SQL Injection
     const orderQuery = `INSERT INTO orders (user_id, total_amount, delivery_address, delivery_phone, payment_method, notes)
                         VALUES (${req.session.userId}, ${total}, '${deliveryAddress}', '${deliveryPhone}', '${paymentMethod}', '${notes}')`;
+
+    if (span) {
+      span.setTag('vulnerability.type', 'sql_injection');
+      span.setTag('vulnerability.category', 'injection');
+      span.setTag('sql.query', orderQuery);
+    }
 
     const [result] = await db.query(orderQuery);
     const orderId = result.insertId;
@@ -178,6 +219,7 @@ router.post('/place', requireAuth, async (req, res) => {
     if (span) {
       span.setTag('order.id', orderId);
       span.setTag('order.total', total);
+      span.setTag('order.notes_validation', notesValidation);
     }
 
     // Insert order items
@@ -197,6 +239,11 @@ router.post('/place', requireAuth, async (req, res) => {
     });
   } catch (error) {
     console.error('Place order error:', error);
+    if (span) {
+      span.setTag('error', true);
+      span.setTag('error.message', error.message);
+      span.setTag('error.stack', error.stack);
+    }
     res.status(500).json({ error: error.message });
   }
 });

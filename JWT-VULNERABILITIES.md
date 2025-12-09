@@ -195,15 +195,15 @@ curl http://localhost:3000/orders/menu?token=YOUR_JWT_TOKEN
 ### 4. Token Still Valid After Logout
 
 ```bash
-# 1. Login and save token
-TOKEN=$(curl -X POST http://localhost:3000/auth/api/login \
+# 1. Login and save token and cookies
+TOKEN=$(curl -c cookies.txt -X POST http://localhost:3000/auth/api/login \
   -H "Content-Type: application/json" \
   -d '{"username":"admin","password":"admin123"}' | jq -r .token)
 
-# 2. Logout
-curl http://localhost:3000/auth/logout
+# 2. Logout (clears cookies but not JWT validity)
+curl -b cookies.txt http://localhost:3000/auth/logout
 
-# 3. Token still works!
+# 3. Token still works even after logout!
 curl -H "Authorization: Bearer $TOKEN" \
   http://localhost:3000/orders/menu
 ```

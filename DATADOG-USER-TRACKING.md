@@ -58,7 +58,27 @@ app.use((req, res, next) => {
 - `isAdmin`: Custom field indicating admin status
 - `sessionId`: Session identifier
 
-### 3. Login Event Tracking
+### 3. User Tracking in Protected Routes
+
+The application now implements `tracer.setUser()` in all authenticated endpoints to ensure proper user tracking:
+
+**Locations:**
+- **JWT Middleware** (`src/middleware/jwtAuth.js`): Tracks users authenticated via JWT or session
+- **Payment Routes** (`src/routes/payment.js`):
+  - Coupon validation endpoint
+  - Payment processing endpoint
+- **Admin Routes** (`src/routes/admin.js`):
+  - CWS trigger endpoint
+  - Command execution endpoint (command injection)
+  - Database query endpoint
+
+**Benefits:**
+- All user actions are tracked and linked to their user ID
+- Enables user-level security monitoring and blocking
+- Provides user context for security signals and traces
+- Allows tracking of payment fraud attempts per user
+
+### 4. Login Event Tracking
 
 The application tracks both successful and failed login attempts:
 
@@ -78,7 +98,7 @@ span.setTag('appsec.events.users.login.failure.usr.id', user.id.toString());
 span.setTag('appsec.events.users.login.failure.usr.exists', true);
 ```
 
-### 4. User Blocking Capability
+### 5. User Blocking Capability
 
 When Datadog ASM blocks a user (via Remote Configuration), the application:
 
@@ -115,7 +135,7 @@ Enable blocking mode in the Datadog UI (see [ASM-SETUP.md](ASM-SETUP.md#-enablin
 
 ```bash
 # Create a test user
-curl -X POST "http://localhost:3000/auth/register" \
+curl -c cookies.txt -X POST "http://localhost:3000/auth/register" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=attacker&password=test123"
 ```
@@ -123,20 +143,17 @@ curl -X POST "http://localhost:3000/auth/register" \
 ### 3. Simulate Attack Behavior
 
 ```bash
-# Login as the user
-curl -X POST "http://localhost:3000/auth/login" \
+# Login as the user (save cookies)
+curl -c cookies.txt -X POST "http://localhost:3000/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -c cookies.txt \
   -d "username=attacker&password=test123"
 
-# Trigger SQL injection attacks (will be detected by ASM)
-curl "http://localhost:3000/orders/menu?category=pizza' OR '1'='1'--" \
-  -b cookies.txt
+# Trigger SQL injection attacks (will be detected by ASM - use cookies)
+curl -b cookies.txt "http://localhost:3000/orders/menu?category=pizza' OR '1'='1'--"
 
-# Trigger command injection attempts
-curl -X POST "http://localhost:3000/admin/system/execute" \
+# Trigger command injection attempts (use cookies)
+curl -b cookies.txt -X POST "http://localhost:3000/admin/system/execute" \
   -H "Content-Type: application/json" \
-  -b cookies.txt \
   -d '{"command": "whoami"}'
 ```
 
@@ -239,26 +256,24 @@ DD_VERSION=1.0.0
 
 ### Step 1: Normal User Flow
 ```bash
-# Register
-curl -X POST "http://localhost:3000/auth/register" \
+# Register (save cookies)
+curl -c cookies.txt -X POST "http://localhost:3000/auth/register" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=normaluser&password=password123"
 
-# Login (user tracking starts)
-curl -X POST "http://localhost:3000/auth/login" \
+# Login (user tracking starts - save cookies)
+curl -c cookies.txt -X POST "http://localhost:3000/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
-  -c cookies.txt \
   -d "username=normaluser&password=password123"
 
-# Browse menu (user tracked in traces)
-curl "http://localhost:3000/orders/menu" -b cookies.txt
+# Browse menu (user tracked in traces - use cookies)
+curl -b cookies.txt "http://localhost:3000/orders/menu"
 ```
 
 ### Step 2: Attack Detection
 ```bash
-# Trigger SQL injection (ASM detects attack)
-curl "http://localhost:3000/orders/menu?category=pizza' UNION SELECT 1,2,3,4,5,6--" \
-  -b cookies.txt
+# Trigger SQL injection (ASM detects attack - use cookies from Step 1)
+curl -b cookies.txt "http://localhost:3000/orders/menu?category=pizza' UNION SELECT 1,2,3,4,5,6--"
 
 # Check Datadog ASM - you'll see:
 # - Attack detected
@@ -269,9 +284,9 @@ curl "http://localhost:3000/orders/menu?category=pizza' UNION SELECT 1,2,3,4,5,6
 ### Step 3: User Blocking
 ```bash
 # In Datadog UI, block the user
-# Then try to access the application:
+# Then try to access the application (use cookies from Step 1):
 
-curl "http://localhost:3000/orders/menu" -b cookies.txt
+curl -b cookies.txt "http://localhost:3000/orders/menu"
 # Response: 403 - Access blocked by security policy
 ```
 

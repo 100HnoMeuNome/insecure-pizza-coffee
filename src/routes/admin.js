@@ -98,10 +98,65 @@ router.get('/users', requireAdmin, async (req, res) => {
   }
 });
 
+// Trigger CWS detection scenarios - For security testing
+router.post('/security/cws-trigger', requireAdmin, (req, res) => {
+  const span = tracer.scope().active();
+  const { scenario } = req.body;
+
+  // Set user information for ASM tracking
+  if (req.session && req.session.userId && req.session.user) {
+    tracer.setUser({
+      id: req.session.userId.toString(),
+      email: req.session.user.email || undefined,
+      name: req.session.user.username || undefined,
+      isAdmin: req.session.user.isAdmin || false
+    });
+  }
+
+  if (span) {
+    span.setTag('security.test', 'cws_scenario');
+    span.setTag('cws.scenario', scenario);
+    span.setTag('usr.id', req.session.userId);
+    span.setTag('usr.is_admin', req.session.user.isAdmin);
+  }
+
+  // Execute the CWS detonate script with specific scenario
+  const scriptPath = '/app/scripts/cws-detonate.sh';
+  const command = scenario === 'all' ? scriptPath : `${scriptPath} ${scenario}`;
+
+  exec(command, { timeout: 60000 }, (error, stdout, stderr) => {
+    if (error) {
+      return res.json({
+        success: false,
+        error: error.message,
+        stderr,
+        message: 'CWS scenario execution failed'
+      });
+    }
+
+    res.json({
+      success: true,
+      scenario,
+      output: stdout,
+      message: 'CWS scenario triggered successfully. Check Datadog CWS for detections.'
+    });
+  });
+});
+
 // Execute system commands - EXTREMELY VULNERABLE (Command Injection)
 router.post('/system/execute', requireAdmin, (req, res) => {
   const span = tracer.scope().active();
   const { command } = req.body;
+
+  // Set user information for ASM tracking
+  if (req.session && req.session.userId && req.session.user) {
+    tracer.setUser({
+      id: req.session.userId.toString(),
+      email: req.session.user.email || undefined,
+      name: req.session.user.username || undefined,
+      isAdmin: req.session.user.isAdmin || false
+    });
+  }
 
   if (span) {
     span.setTag('vulnerability.type', 'command_injection');
@@ -149,6 +204,16 @@ router.post('/database/query', requireAdmin, async (req, res) => {
   const { query } = req.body;
 
   try {
+    // Set user information for ASM tracking
+    if (req.session && req.session.userId && req.session.user) {
+      tracer.setUser({
+        id: req.session.userId.toString(),
+        email: req.session.user.email || undefined,
+        name: req.session.user.username || undefined,
+        isAdmin: req.session.user.isAdmin || false
+      });
+    }
+
     if (span) {
       span.setTag('vulnerability.type', 'arbitrary_sql_execution');
       span.setTag('vulnerability.category', 'injection');

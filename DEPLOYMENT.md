@@ -18,7 +18,9 @@ This guide works for both **AWS EKS** and **Azure AKS**.
 aws ecr get-login-password --region <region> | docker login --username AWS --password-stdin <account-id>.dkr.ecr.<region>.amazonaws.com
 
 # Build and tag
-docker build -t insecure-pizza-coffee:latest .
+docker build -t insecure-pizza-coffee:latest . \
+  --build-arg DD_GIT_REPOSITORY_URL=$(git config --get remote.origin.url) \
+  --build-arg DD_GIT_COMMIT_SHA=$(git rev-parse HEAD)
 docker tag insecure-pizza-coffee:latest <account-id>.dkr.ecr.<region>.amazonaws.com/insecure-pizza-coffee:latest
 
 # Push to ECR
@@ -31,7 +33,9 @@ docker push <account-id>.dkr.ecr.<region>.amazonaws.com/insecure-pizza-coffee:la
 az acr login --name <registry-name>
 
 # Build and tag
-docker build -t insecure-pizza-coffee:latest .
+docker build -t insecure-pizza-coffee:latest . \
+  --build-arg DD_GIT_REPOSITORY_URL=$(git config --get remote.origin.url) \
+  --build-arg DD_GIT_COMMIT_SHA=$(git rev-parse HEAD)
 docker tag insecure-pizza-coffee:latest <registry-name>.azurecr.io/insecure-pizza-coffee:latest
 
 # Push to ACR

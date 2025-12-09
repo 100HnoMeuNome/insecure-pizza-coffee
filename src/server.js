@@ -31,6 +31,7 @@ const cookieParser = require('cookie-parser');
 const session = require('cookie-session');
 const path = require('path');
 const i18n = require('i18n');
+const logger = require('./config/logger');
 
 const authRoutes = require('./routes/auth');
 const orderRoutes = require('./routes/orders');
@@ -83,6 +84,18 @@ app.use(session({
   overwrite: true
 }));
 
+// Compatibility patch: cookie-session doesn't have destroy() method
+// Add it to avoid errors if any code tries to call req.session.destroy()
+app.use((req, res, next) => {
+  if (req.session && typeof req.session.destroy !== 'function') {
+    req.session.destroy = function(callback) {
+      req.session = null;
+      if (callback) callback();
+    };
+  }
+  next();
+});
+
 // Custom middleware to add Datadog trace context and user information
 app.use((req, res, next) => {
   const span = tracer.scope().active();
@@ -112,8 +125,8 @@ app.use((req, res, next) => {
         // If ASM blocks the user, tracer.setUser() will throw an error
         if (error.type === 'aborted') {
           console.log(`[ASM] User blocked: ${req.session.user.username} (ID: ${req.session.userId})`);
-          // Destroy session for blocked user
-          req.session.destroy();
+          // Clear session for blocked user (cookie-session doesn't have destroy())
+          req.session = null;
           res.clearCookie('jwt_token');
           return res.status(403).json({
             error: 'Access blocked by security policy',
@@ -148,7 +161,7 @@ app.use('/orders', orderRoutes);
 app.use('/payment', paymentRoutes);
 app.use('/admin', adminRoutes);
 
-// Error handler with Datadog integration
+// Error handler with Datadog integration and correlated logging
 app.use((err, req, res, next) => {
   const span = tracer.scope().active();
   if (span) {
@@ -157,7 +170,16 @@ app.use((err, req, res, next) => {
     span.setTag('error.stack', err.stack);
   }
 
-  console.error('Error:', err);
+  // Log error with trace correlation
+  logger.error('Application error occurred', {
+    error: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+    ip: req.ip,
+    user: req.session?.user?.username || 'anonymous'
+  });
+
   res.status(500).render('error', { error: err.message });
 });
 
@@ -172,10 +194,21 @@ app.get('/ready', (req, res) => {
 });
 
 app.listen(PORT, '0.0.0.0', () => {
+  logger.info('Insecure Pizza & Coffee application started', {
+    port: PORT,
+    environment: process.env.NODE_ENV || 'development',
+    dd_apm_enabled: process.env.DD_TRACE_ENABLED === 'true',
+    dd_asm_enabled: process.env.DD_APPSEC_ENABLED === 'true',
+    dd_iast_enabled: process.env.DD_IAST_ENABLED === 'true',
+    log_injection_enabled: process.env.DD_LOGS_INJECTION === 'true'
+  });
+
+  // Also log to console for backward compatibility
   console.log(`Insecure Pizza & Coffee app listening on port ${PORT}`);
   console.log(`Datadog APM enabled: ${process.env.DD_TRACE_ENABLED}`);
   console.log(`Datadog ASM enabled: ${process.env.DD_APPSEC_ENABLED}`);
   console.log(`Datadog IAST enabled: ${process.env.DD_IAST_ENABLED}`);
+  console.log(`Log and Trace correlation enabled: ${process.env.DD_LOGS_INJECTION === 'true'}`);
 });
 
 module.exports = app;

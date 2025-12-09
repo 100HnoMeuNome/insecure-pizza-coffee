@@ -162,7 +162,9 @@ aws ecr get-login-password --region us-east-1 | docker login --username AWS --pa
 
 # Build image
 cd ..  # Back to project root
-docker build -t insecure-pizza-coffee:latest .
+docker build -t insecure-pizza-coffee:latest . \
+  --build-arg DD_GIT_REPOSITORY_URL=$(git config --get remote.origin.url) \
+  --build-arg DD_GIT_COMMIT_SHA=$(git rev-parse HEAD)
 
 # Tag image
 docker tag insecure-pizza-coffee:latest <account-id>.dkr.ecr.us-east-1.amazonaws.com/insecure-pizza-coffee:latest

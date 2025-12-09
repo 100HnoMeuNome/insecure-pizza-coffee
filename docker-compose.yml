@@ -25,7 +25,11 @@ services:
       retries: 5
 
   app:
-    build: .
+    build:
+      context: .
+      args:
+        DD_GIT_REPOSITORY_URL: ${DD_GIT_REPOSITORY_URL}
+        DD_GIT_COMMIT_SHA: ${DD_GIT_COMMIT_SHA}
     container_name: pizzacoffee-app
     environment:
       NODE_ENV: production
@@ -104,9 +108,17 @@ services:
       DD_RUNTIME_SECURITY_CONFIG_ENABLED: true
       DD_RUNTIME_SECURITY_CONFIG_REMOTE_CONFIGURATION_ENABLED: true
 
-      # Compliance and Host Benchmarks
+      # CSM Misconfigurations (Compliance and Host Benchmarks)
       DD_COMPLIANCE_CONFIG_ENABLED: true
       DD_COMPLIANCE_CONFIG_HOST_BENCHMARKS_ENABLED: true
+
+      # CSM Threats - Container Image Metadata Collection
+      DD_CONTAINER_IMAGE_ENABLED: true
+
+      # SBOM (Software Bill of Materials) Collection
+      DD_SBOM_ENABLED: true
+      DD_SBOM_CONTAINER_IMAGE_ENABLED: true
+      DD_SBOM_HOST_ENABLED: true
 
       # Host Root for CWS file integrity monitoring
       HOST_ROOT: /host/root
@@ -121,6 +133,7 @@ services:
       # Logs
       DD_LOGS_ENABLED: true
       DD_LOGS_CONFIG_CONTAINER_COLLECT_ALL: true
+      DD_LOGS_CONFIG_AUTO_MULTI_LINE_DETECTION: true
 
       # Docker integration
       DD_CONTAINER_LABELS_AS_TAGS: '{"*":"%%label%%"}'

